@@ -1,8 +1,8 @@
-# Basic-VEP-Parser
+# Basic-VEP-Parser: An ensembl-vep parser
 
 ## Introduction
 
-Somatic variant manual review usually starts with some basic filtration to weed out obviously incorrect calls made by variant caller(s), low read depth, and so on.  This process is usually done with ad-hoc bash scripts, using awk and/or sed, but leads to great variation.  This script, implemented in [Haskell](https://www.haskell.org/), provides a standardized method for basic filtration on somatic variant data using a filtration string.
+Ensembl's [Variant Effect Predictor](https://github.com/Ensembl/ensembl-vep)(**vep**) provides functional annotations of genomic variants.  However, the output of **vep** can be hard to parse, especially due to the **Extra** column.  This **Extra** column contains very useful data that is hidden within semi-colon demimited fields that create problems for further analysis. This script, implemented in [Haskell](https://www.haskell.org/), provides a conversion of the standard output of **vep** to a fully tab-delimited version of **vep** output that is fully and easily accessible to downstream filtration and further parsing. 
 
 ## Prerequisites
 
