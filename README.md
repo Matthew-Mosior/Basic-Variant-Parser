@@ -36,6 +36,7 @@ For maximum performance, please compile and run the source code as follows:<br/>
 
 **bvp.hs** has few different command line arguments:<br/>
 ```
+Basic VEP Parser, Copyright (c) 2019 Matthew Mosior.
 Usage: bvp [-vV?o] [file]
   -v          --verbose             Output on stderr.
   -V, -?      --version             Show version number.
