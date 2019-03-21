@@ -48,3 +48,11 @@ The `-V` option, the `version` option, will show the version of `bvp` in use.<br
 The `-o` option, the `outputfile` option, is used to output the operation on the **vep** input file into a output file, whose name is specified by the user, for example `transformedexample.vep`.<br/>
 Finally, the `--help` option outputs the `help` message seen above.
 
+## Docker 
+
+A docker-based solution (Dockerfile) is availible in the corresponding [repository](https://github.com/Matthew-Mosior/Basic-Variant-Filter---Docker).  Currently, this Dockerfile assumes that you run docker interactively.
+
+## Credits
+
+Documentation was added March 2019.<br/>
+Author : [Matthew Mosior](https://github.com/Matthew-Mosior)
