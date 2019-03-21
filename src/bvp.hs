@@ -75,22 +75,23 @@ compilerOpts argv =
     case getOpt Permute options argv of
         (args,file,[]) ->
             if DL.elem Help args
-                then do hPutStrLn stderr (SCG.usageInfo header options)
+                then do hPutStrLn stderr (greeting ++ SCG.usageInfo header options)
                         SX.exitWith SX.ExitSuccess
                 else if DL.elem Version args
-                    then do hPutStrLn stderr (version ++ SCG.usageInfo header options)
+                    then do hPutStrLn stderr (greeting ++ version ++ SCG.usageInfo header options)
                             SX.exitWith SX.ExitSuccess
                     else if DL.length file > 1
-                        then do hPutStrLn stderr (flerror ++ github ++ SCG.usageInfo header options)
+                        then do hPutStrLn stderr (flerror ++ greeting ++ github ++ SCG.usageInfo header options)
                                 SX.exitWith (SX.ExitFailure 1)
                         else return (DL.nub args, DL.concat file)
         (_,_,errors) -> do
             hPutStrLn stderr (DL.concat errors ++ SCG.usageInfo header options)
             SX.exitWith (SX.ExitFailure 1)
         where
-            header      = "Usage: bvf [-vV?o] [file]"
+            greeting    = "Basic VEP Parser, Copyright (c) 2019 Matthew Mosior.\n"
+            header      = "Usage: bvp [-vV?o] [file]"
             version     = "Basic VEP Parser (BVP), Version 1.0.\n"
-            github      = "Please see https://github.com/Matthew-Mosior/Basic-Variant-Filter/wiki for more information.\n"
+            github      = "Please see https://github.com/Matthew-Mosior/Basic-VEP-Parser for more information.\n"
             flerror     = "Incorrect number of input files:  Please provide one input file.\n" 
 
 {----------------------------------------}
