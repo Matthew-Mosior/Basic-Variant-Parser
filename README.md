@@ -31,3 +31,19 @@ You can call it using the **runghc** command provided by the GHC compiler as suc
 For maximum performance, please compile and run the source code as follows:<br/>
 `$ ghc -O2 -o BVP bvp.hs`<br/>
 `$ ./BVP example.vep`<br/>
+
+## Arguments
+
+**bvp.hs** has few different command line arguments:<br/>
+```
+Usage: bvp [-vV?o] [file]
+  -v          --verbose             Output on stderr.
+  -V, -?      --version             Show version number.
+  -o OUTFILE  --outputfile=OUTFILE  The output file.
+              --help                Print this help message.
+```
+The `-v` option, the `verbose` option, will provide a full error message.<br/>
+The `-V` option, the `version` option, will show the version of `bvp` in use.<br/>
+The `-o` option, the `outputfile` option, is used to output the operation on the **vep** input file into a output file, whose name is specified by the user, for example `transformedexample.vep`.<br/>
+Finally, the `--help` option outputs the `help` message seen above.
+
