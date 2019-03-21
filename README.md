@@ -18,3 +18,16 @@ To install the peripheral packages **bvp.hs** requires, you can call the followi
  - System.Process
  - Data.List.Split 
  - System.Temporary
+ 
+ ## Input
+
+A prerequisite for getting useful output from this script is to have the correct input file structure.  This script requires that you provide a file that was produced using **vep**.
+
+## Usage
+
+**bvp.hs** is easy to use.<br/><br/>
+You can call it using the **runghc** command provided by the GHC compiler as such:<br/>
+`$ runghc bvp.hs example.vep`<br/><br/>
+For maximum performance, please compile and run the source code as follows:<br/>
+`$ ghc -O2 -o BVP bvp.hs`<br/>
+`$ ./BVP example.vep`<br/>
