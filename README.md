@@ -57,7 +57,7 @@ Finally, the `--help` option outputs the `help` message seen above.
 
 ## Docker 
 
-A docker-based solution (Dockerfile) is availible in the corresponding [repository](https://github.com/Matthew-Mosior/Basic-Variant-Filter---Docker).  Currently, this Dockerfile assumes that you run docker interactively.
+A docker-based solution (Dockerfile) is availible in the corresponding [repository](https://github.com/Matthew-Mosior/Basic-VEP-Parser---Docker).  Currently, this Dockerfile assumes that you run docker interactively.
 
 ## Credits
 
