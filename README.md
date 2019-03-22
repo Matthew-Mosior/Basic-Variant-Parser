@@ -2,7 +2,7 @@
 
 ## Introduction
 
-[Ensembl's](https://github.com/Ensembl) [Variant Effect Predictor](https://github.com/Ensembl/ensembl-vep) (**vep**) provides functional annotations of genomic variants.  However, the output of **vep** can be hard to parse, especially due to the **Extra** column.  This **Extra** column contains very useful data that is hidden within semi-colon demimited fields that creates problems for further analysis. This script, implemented in [Haskell](https://www.haskell.org/), provides a conversion of the standard output of **vep** to a fully tab-delimited version of **vep** output that is fully and easily accessible to downstream filtration and further parsing. 
+[Ensembl's](https://github.com/Ensembl) [Variant Effect Predictor](https://github.com/Ensembl/ensembl-vep) (**vep**) provides functional annotations of genomic variants.  However, the output of **vep** can be hard to parse, especially due to the **Extra** column.  This **Extra** column contains very useful data that is nested within semi-colon demimited fields that creates problems for further analysis. This script, implemented in [Haskell](https://www.haskell.org/), provides a conversion of the standard output of **vep** to a fully tab-delimited version of **vep** output that is fully and easily accessible to downstream filtration and further parsing. 
 
 ## Prerequisites
 
