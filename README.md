@@ -14,10 +14,17 @@ To install the peripheral packages **bvp.hs** requires, you can call the followi
 `$ cabal install [packagename]`<br/><br/>
 
 **Required packages**
- - Text.PrettyPrint.Boxes
- - System.Process
- - Data.List.Split 
- - System.Temporary
+- Data.List 
+- Data.List.Split 
+- Data.Ord 
+- Data.Tuple 
+- System.Console.GetOpt 
+- System.Directory 
+- System.Environment 
+- System.Exit 
+- System.IO 
+- System.IO.Temp 
+- System.Process 
  
  ## Input
 
