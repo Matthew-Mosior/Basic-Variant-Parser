@@ -384,9 +384,9 @@ main = do
     if null files
         then do --Get stdin.
                 contents <- SIO.getContents
-                --Run args and contents through processArgsandContents.
+                --Run args and contents through processArgsAndContents.
                 processArgsAndContents (args,contents)
-        else do --Run args and files through processArgsandFiles.
+        else do --Run args and files through processArgsAndFiles.
                 processArgsAndFiles (args,files)
 
 {----------------}
