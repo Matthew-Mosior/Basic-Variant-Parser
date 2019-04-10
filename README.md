@@ -1,4 +1,4 @@
-# Basic-VEP-Parser: An ensembl-vep parser
+# Basic-Variant-Parser: A variant file format parser
 
 ## Introduction
 
