@@ -15,6 +15,7 @@ To install the peripheral packages **bvp.hs** requires, you can call the followi
 
 **Required packages**
 - Data.List 
+- Data.List.Extra
 - Data.List.Split 
 - Data.Ord 
 - Data.Tuple 
@@ -34,10 +35,10 @@ A prerequisite for getting useful output from this script is to have the correct
 
 **bvp.hs** is easy to use.<br/><br/>
 You can call it using the **runghc** command provided by the GHC compiler as such:<br/>
-`$ runghc bvp.hs example.vep`<br/><br/>
+`$ runghc bvp.hs -I vcf -O tvcf -g -G -o output.vcf example.vcf.gz`<br/><br/>
 For maximum performance, please compile and run the source code as follows:<br/>
 `$ ghc -O2 -o BVP bvp.hs`<br/>
-`$ ./BVP example.vep`<br/>
+`$ ./BVP -I vcf -O tvcf -g -G -o output.vcf example.vcf.gz`<br/>
 
 ## Arguments
 
