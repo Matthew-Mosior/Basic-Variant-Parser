@@ -75,6 +75,12 @@ isOutFormat :: Flag -> Bool
 isOutFormat (OutFormat _) = True
 isOutFormat _             = False
 
+--isGzipOut -> This function will
+--test for the GzipOut flag.
+isGzipOut :: Flag -> Bool
+isGzipOut GzipOut = True
+isGzipOut _       = False
+
 {------------------------------------------}
 
 {-Custom extraction functions for Flag Datatype.-}
@@ -172,10 +178,14 @@ compilerOpts argv =
                                                                         (extractOutFormat (DL.head (DL.filter (isOutFormat) args)))))
                                             then do hPutStrLn stderr (inoutmismatch ++ inoutmappings ++ SCG.usageInfo header options)
                                                     SX.exitWith (SX.ExitFailure 1)
-                                            else if DL.length file > 1
-                                                then do hPutStrLn stderr (flerror ++ greeting ++ github ++ SCG.usageInfo header options)
-                                                        SX.exitWith (SX.ExitFailure 1)
-                                                else return (DL.nub args, DL.concat file)
+                                            else if (DL.length (DL.filter (isGzipOut) args) > 0) &&
+                                                    (DL.length (DL.filter (isOutputFile) args) < 1) 
+                                                then do hPutStrLn stderr (gziperror ++ SCG.usageInfo header options)
+                                                        SX.exitWith (ExitFailure 1)
+                                                else if DL.length file > 1
+                                                    then do hPutStrLn stderr (flerror ++ greeting ++ github ++ SCG.usageInfo header options)
+                                                            SX.exitWith (SX.ExitFailure 1)
+                                                    else return (DL.nub args, DL.concat file)
         (_,_,errors) -> do
             hPutStrLn stderr (DL.concat errors ++ SCG.usageInfo header options)
             SX.exitWith (SX.ExitFailure 1)
@@ -189,6 +199,7 @@ compilerOpts argv =
             outerror       = "Please provide an output format (-O).\n"
             inferror       = "Input format not recognized.\n" 
             outferror      = "Output format not recognized.\n"
+            gziperror      = "OutputFile argument (-o) necessary to use GzipOut argument (-G).\n"
             formats        = "Accepted formats are vcf, vep, tvcf and tvep.\n"
             inoutmismatch  = "Please provide an appropriate input/output mapping.\n"
             inoutmappings  = "Appropriate mappings are: vep <-> tvep and vcf <-> tvcf.\n"
