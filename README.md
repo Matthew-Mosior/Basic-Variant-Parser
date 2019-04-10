@@ -28,7 +28,7 @@ To install the peripheral packages **bvp.hs** requires, you can call the followi
  
  ## Input
 
-A prerequisite for getting useful output from this script is to have the correct input file structure.  This script requires that you provide a file that was produced using **vep**.
+A prerequisite for getting useful output from this script is to have the correct input file structure.  This script requires that you provide a file that was produced using **vep**, or a **variant-calling format (vcf)** file.
 
 ## Usage
 
@@ -43,16 +43,24 @@ For maximum performance, please compile and run the source code as follows:<br/>
 
 **bvp.hs** has few different command line arguments:<br/>
 ```
-Basic VEP Parser, Copyright (c) 2019 Matthew Mosior.
-Usage: bvp [-vV?o] [file]
+Basic Variant Parser, Copyright (c) 2019 Matthew Mosior.
+Usage: bvp [-vV?IoOgG] [file]
   -v          --verbose             Output on stderr.
   -V, -?      --version             Show version number.
-  -o OUTFILE  --outputfile=OUTFILE  The output file.
+  -I IN       --InFormat=IN         The format of the input file.
+  -O OUT      --OutFormat=OUT       The format of the output file.
+  -o OUTFILE  --OutputFile=OUTFILE  The output file.
+  -g          --GzipIn              Gzipped input file?
+  -G          --GzipOut             Gzipped output file?
               --help                Print this help message.
 ```
 The `-v` option, the `verbose` option, will provide a full error message.<br/>
 The `-V` option, the `version` option, will show the version of `bvp` in use.<br/>
-The `-o` option, the `outputfile` option, is used to output the operation on the **vep** input file into a output file, whose name is specified by the user, for example `transformedexample.vep`.<br/>
+The `-I` option, the `InFormat` option, specifies the format of the input file, and is required to run `bvp.hs`.
+The `-O` option, the `OutFormat` option, specifies the format of the output file, and is required to run `bvp.hs`.
+The `-o` option, the `outputfile` option, is used to output the operation on the input file into a output file, whose name is specified by the user.<br/>
+The `-g` option, the `GzipIn` option, specifies that the input file is gzipped.<br/>
+The `-G` option, the `GzipOut` option, specifies that the output file is to be gzipped.<br/>
 Finally, the `--help` option outputs the `help` message seen above.
 
 ## Docker 
