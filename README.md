@@ -2,7 +2,7 @@
 
 ## Introduction
 
-[Ensembl's](https://github.com/Ensembl) [Variant Effect Predictor](https://github.com/Ensembl/ensembl-vep) (**vep**) provides functional annotations of genomic variants.  However, the output of **vep** can be hard to parse, especially due to the **Extra** column.  This **Extra** column contains very useful data that is nested within semi-colon demimited fields that creates problems for further analysis. This script, implemented in [Haskell](https://www.haskell.org/), provides a conversion of the standard output of **vep** to a fully tab-delimited version of **vep** output that is fully and easily accessible to downstream filtration and further parsing. 
+[Ensembl's](https://github.com/Ensembl) [Variant Effect Predictor](https://github.com/Ensembl/ensembl-vep) (**vep**) provides functional annotations of genomic variants.  However, the output of **vep**, as well as **variant-calling format (vcf)** files, can be hard to parse especially due nested key-value pair fields common to both file types.  This script, implemented in [Haskell](https://www.haskell.org/), provides a conversion of the standard output of **vep** and **vcf** to a fully tab-delimited version of output that is fully and easily accessible to downstream filtration and further parsing. 
 
 ## Prerequisites
 
@@ -28,7 +28,7 @@ To install the peripheral packages **bvp.hs** requires, you can call the followi
  
  ## Input
 
-A prerequisite for getting useful output from this script is to have the correct input file structure.  This script requires that you provide a file that was produced using **vep**, or a **variant-calling format (vcf)** file.
+A prerequisite for getting useful output from this script is to have the correct input file structure.  This script requires that you provide a file that was produced using **vep**, or a **vcf** file.
 
 ## Usage
 
