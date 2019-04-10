@@ -1,4 +1,4 @@
-# Basic-Variant-Parser: A variant file format parser
+# Basic-Variant-Parser: A Variant File Parser
 
 ## Introduction
 
