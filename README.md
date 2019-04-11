@@ -60,8 +60,8 @@ The `-V` option, the `version` option, will show the version of `bvp` in use.<br
 The `-I` option, the `InFormat` option, specifies the format of the input file, and is required to run `bvp.hs`.<br/>
 The `-O` option, the `OutFormat` option, specifies the format of the output file, and is required to run `bvp.hs`.<br/>
 The `-o` option, the `outputfile` option, is used to output the operation on the input file into a output file, whose name is specified by the user.<br/>
-The `-g` option, the `GzipIn` option, specifies that the input file is gzipped.<br/>
-The `-G` option, the `GzipOut` option, specifies that the output file is to be gzipped.<br/>
+The `-g` option, the `GzipIn` option, specifies that the input file is gzip compressed.<br/>
+The `-G` option, the `GzipOut` option, specifies that the output file is to be compressed using gzip.<br/>
 Finally, the `--help` option outputs the `help` message seen above.
 
 ## Docker 
