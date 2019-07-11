@@ -403,19 +403,82 @@ infixFilter (x:xs) = [smallInfixFilter x] ++ (infixFilter xs)
                                          else smallestInfixFilter xs
         --------------------------------
 
---singleYesAdder -> This function will
---add "YES" to all singleton lists.
-singleYesAdder :: [[[String]]] -> [[[String]]]
-singleYesAdder []     = []
-singleYesAdder (x:xs) = [smallSingleYesAdder x] ++ (singleYesAdder xs)
+--notCsqFieldsAdder -> This function will
+--annotate non-CSQ fields.
+notCsqFieldsAdder :: [[[String]]] -> [[[(String,String)]]]
+notCsqFieldsAdder []     = []
+notCsqFieldsAdder (x:xs) = [(smallNotCsqFieldsAdder x)] ++ (notCsqFieldsAdder xs)
     where
-        --Nested function definitions.--
-        --smallSingleYesAdder
-        smallSingleYesAdder :: [[String]] -> [[String]]
-        smallSingleYesAdder []     = []
-        smallSingleYesAdder (x:xs) = if (DL.length x == 1)
-                                         then [x ++ ["YES"]] ++ (smallSingleYesAdder xs)
-                                         else [x] ++ (smallSingleYesAdder xs)
+        --Nested Function Definitions.--
+        --smallNotCsqFieldsAdder
+        smallNotCsqFieldsAdder :: [[String]] -> [[(String,String)]]
+        smallNotCsqFieldsAdder []     = []
+        smallNotCsqFieldsAdder (x:xs) = [smallerNotCsqFieldsAdder x] ++ (smallNotCsqFieldsAdder xs)
+        --smallerNotCsqFieldsAdder 
+        smallerNotCsqFieldsAdder :: [String] -> [(String,String)]
+        smallerNotCsqFieldsAdder [] = []
+        smallerNotCsqFieldsAdder xs = [(DL.head xs,DL.last xs)]
+        --------------------------------
+
+--notCsqFieldsAddedBack -> This function will
+--add back fields not present in each sublist.
+notCsqFieldsAddedBack :: [[[(String,String)]]] -> [String] -> [[[(String,String)]]]
+notCsqFieldsAddedBack [] []     = []
+notCsqFieldsAddedBack _  []     = []
+notCsqFieldsAddedBack [] _      = []
+notCsqFieldsAddedBack (x:xs) ys = [smallNotCsqFieldsAddedBack x ys] ++ (notCsqFieldsAddedBack xs ys) 
+    where
+        --Nested Function Definitions.--
+        --smallNotCsqFieldsAddedBack
+        smallNotCsqFieldsAddedBack :: [[(String,String)]] -> [String] -> [[(String,String)]]
+        smallNotCsqFieldsAddedBack [] []     = []
+        smallNotCsqFieldsAddedBack _  []     = []
+        smallNotCsqFieldsAddedBack [] _      = []
+        smallNotCsqFieldsAddedBack xs ys = [DL.zip (ys DL.\\ (DL.map (fst) (DL.concat xs))) (DL.replicate (DL.length (ys DL.\\ (DL.map (fst) (DL.concat xs)))) "N/A")] ++ xs
+
+--csqFieldsAdder -> This function will
+--annotate the CSQ fields.
+csqFieldsAdder :: [[[[String]]]] -> [String] -> [[[[(String,String)]]]]
+csqFieldsAdder []   []   = []
+csqFieldsAdder _    []   = []
+csqFieldsAdder []    _   = []
+csqFieldsAdder (x:xs) ys = [smallCsqFieldsAdder x ys] ++ (csqFieldsAdder xs ys)
+    where
+        --Nested Function Definitions.--
+        --smallCsqFieldsAdder
+        smallCsqFieldsAdder :: [[[String]]] -> [String] -> [[[(String,String)]]]
+        smallCsqFieldsAdder [] []     = []
+        smallCsqFieldsAdder _  []     = []
+        smallCsqFieldsAdder [] _      = []
+        smallCsqFieldsAdder (x:xs) ys = [smallerCsqFieldsAdder x ys] ++ (smallCsqFieldsAdder xs ys) 
+        --smallerCsqFieldsAdder
+        smallerCsqFieldsAdder :: [[String]] -> [String] -> [[(String,String)]]
+        smallerCsqFieldsAdder [] []     = []
+        smallerCsqFieldsAdder [] _      = []
+        smallerCsqFieldsAdder _  []     = []
+        smallerCsqFieldsAdder (x:xs) ys = [smallestCsqFieldsAdder x ys] ++ (smallerCsqFieldsAdder xs ys)
+        --smallestCsqFieldsAdder 
+        smallestCsqFieldsAdder :: [String] -> [String] -> [(String,String)]
+        smallestCsqFieldsAdder [] []         = []
+        smallestCsqFieldsAdder [] _          = []
+        smallestCsqFieldsAdder _  []         = []
+        smallestCsqFieldsAdder (x:xs) (y:ys) = [(y,x)] ++ (smallestCsqFieldsAdder xs ys)  
+        --------------------------------
+
+--headerFieldsAdder -> This function will
+--annotate the header fields.
+headerFieldsAdder :: [[String]] -> [String] -> [[(String,String)]]
+headerFieldsAdder [] []     = []
+headerFieldsAdder _  []     = []
+headerFieldsAdder [] _      = []
+headerFieldsAdder (x:xs) ys = [smallHeaderFieldsAdder x ys] ++ (headerFieldsAdder xs ys)
+    where
+        --Nested Function Definitions.--
+        smallHeaderFieldsAdder :: [String] -> [String] -> [(String,String)]
+        smallHeaderFieldsAdder [] []         = []
+        smallHeaderFieldsAdder [] _          = []
+        smallHeaderFieldsAdder _  []         = []
+        smallHeaderFieldsAdder (x:xs) (y:ys) = [(y,x)] ++ (smallHeaderFieldsAdder xs ys)
         -------------------------------- 
 
 --insertSubfields -> This function will
@@ -429,16 +492,23 @@ insertSubfields [x,y] z  = [x,z,y]
 --replicate the data field based on the
 --amount of data associated with the "CSQ"
 --field.
-dataReplicator :: [[String]] -> [Int] -> [[String]]
+--dataReplicator :: [[String]] -> [Int] -> [[String]]
+dataReplicator :: [[a]] -> [Int] -> [[a]]
 dataReplicator [] _ = []
 dataReplicator _ [] = []
 dataReplicator (x:xs) (y:ys) = (DL.replicate y x) ++ (dataReplicator xs ys)
 
 --dataCombinator This function will
 --combine various data fields.
-dataCombinator:: [[String]] -> [[String]] -> [[String]] -> [[String]]
+dataCombinator :: [[String]] -> [[String]] -> [[String]] -> [[String]]
 dataCombinator []     []     []     = []
 dataCombinator (a:as) (b:bs) (c:cs) = [a ++ b ++ c] ++ (dataCombinator as bs cs)
+
+--dataCombinatorNew This function will
+--combine various data fields.
+dataCombinatorNew :: [[(String,String)]] -> [[(String,String)]] -> [[(String,String)]] -> [[(String,String)]]
+dataCombinatorNew []     []     []     = []
+dataCombinatorNew (a:as) (b:bs) (c:cs) = [a ++ b ++ c] ++ (dataCombinatorNew as bs cs)
 
 --nonCsqFieldNotApplicableAdder -> This function will
 --add N/As for elements not seen in header list.
@@ -476,6 +546,12 @@ notApplicableAdder (x:xs) = [smallNotApplicableAdder x] ++ (notApplicableAdder x
 combineInfoFields :: [[String]] -> [[String]] -> [[[String]]]
 combineInfoFields [] [] = []
 combineInfoFields (x:xs) (y:ys) = [[take 3 x] ++ [y] ++ [drop 3 x]] ++ (combineInfoFields xs ys)
+
+--combineInfoFields -> This function will
+--combine the finalized INFO field.
+combineInfoFieldsNew :: [[(String,String)]] -> [[(String,String)]] -> [[[(String,String)]]]
+combineInfoFieldsNew [] [] = []
+combineInfoFieldsNew (x:xs) (y:ys) = [[take 3 x] ++ [y] ++ [drop 3 x]] ++ (combineInfoFieldsNew xs ys)
 
 {----------------------------------}
 
@@ -810,16 +886,6 @@ processArgsAndFilesVcfTvcf (options,inputfile) = do
                 let gsubfieldscsqheadersonlyinfo = DLS.splitOn "|" (DL.filter (\x -> x /= '"' && x /= '>') (DL.last (DLS.splitOn ":" gcsqheadersonlyinfo)))
                 --Remove "CSQ" from gheadersonlyinfo.
                 let gfinalheadersonlyinfo =  DLS.splitWhen (\x -> x == "CSQ") gheadersonlyinfo
-                --Add back all missed field using finalheadersonlyinfo and splitonlyequals.
-                let gfinalsplitonlyequals = nonCsqFieldNotApplicableAdder gsplitonlyequals (DL.concat gfinalheadersonlyinfo)
-                --Concatenate the inner lists of gfinalsplitonlyequals.
-                let gconcatfinalsplitonlyequals = DL.map (DL.concat) gfinalsplitonlyequals
-                --Add YES to add single elements of gconcatfinalsplitonlyequals.
-                let gtrueconcatfinalsplitonlyequals = singleYesAdder gconcatfinalsplitonlyequals
-                --Sort gconcatfinalsplitonlyequals on heads of lists.
-                let gsortedfinalsplitonlyequals = DL.map (DL.sortBy (\x y -> DO.compare (DL.head x) (DL.head y))) gtrueconcatfinalsplitonlyequals
-                --Take only the second element of each sublist.
-                let gsecondelementsortedfinal = DL.map (DL.map (DL.last)) gsortedfinalsplitonlyequals
                 --Insert gsubfieldscsqheadersonlyinfo into gfinalheadersonlyinfo.
                 let gfinalheaders = DL.concat (insertSubfields gfinalheadersonlyinfo gsubfieldscsqheadersonlyinfo)
                 --Grab data header from gdataonly.
@@ -834,18 +900,24 @@ processArgsAndFilesVcfTvcf (options,inputfile) = do
                 let gheadreplicateddata = dataReplicator gheadinfodataonly (DL.concat (DL.map (DL.map (DL.length)) gsplitlastsplitcomma))
                 --Replicate gtailinfodataonly the correct number of times.
                 let gtailreplicateddata = dataReplicator gtailinfodataonly (DL.concat (DL.map (DL.map (DL.length)) gsplitlastsplitcomma)) 
-                --Replicate gsecondelementsortedfinal the correct number of times.
-                let gsecondelementsortedfinalreplicateddata = dataReplicator gsecondelementsortedfinal (DL.concat (DL.map (DL.map (DL.length)) gsplitlastsplitcomma))                  --Concatenate gsplitlastsplitcomma.
+                --Concatenate gsplitlastsplitcomma.
                 let gconcatsplitlastsplitcomma = (DL.concat (DL.concat gsplitlastsplitcomma))
-                --Combine gconcatsplitlastsplitcomma and gsecondelementsortedfinalreplicateddata.
-                let gfinalizedinfofield = combineInfoFields gsecondelementsortedfinalreplicateddata gconcatsplitlastsplitcomma
-                --Concatenate gfinalizedinfofield.
+                let gannotatedcsqheader = csqFieldsAdder gsplitlastsplitcomma gsubfieldscsqheadersonlyinfo
+                let gannotatedcsqheaderfinal = headerFieldsAdder gconcatsplitlastsplitcomma gsubfieldscsqheadersonlyinfo
+                let gconcatannotatedcsqheader = DL.concat (DL.concat (gannotatedcsqheader))
+                let gannotatedheadfields = headerFieldsAdder gheadreplicateddata (DL.head gfinaldataheader)
+                let gannotatedtailfields = headerFieldsAdder gtailreplicateddata (DL.last gfinaldataheader)
+                let gannotatednotcsqfields = notCsqFieldsAdder gnotcsqsplitequals
+                let gannotatednotcsqfieldsaddedback = notCsqFieldsAddedBack gannotatednotcsqfields (DL.concat gfinalheadersonlyinfo)
+                let greplicatedannotatednotcsqfinal = dataReplicator (DL.map (DL.concat) gannotatednotcsqfieldsaddedback) (DL.concat (DL.map (DL.map (DL.length)) gsplitlastsplitcomma))
+                let gfinalizedinfofield = combineInfoFieldsNew greplicatedannotatednotcsqfinal gannotatedcsqheaderfinal
                 let gfinalinfofield = DL.map (DL.concat) gfinalizedinfofield
-                --Combined greplicateddata and gsplitlastsplitcomma.
-                let gfinalizeddata = dataCombinator gheadreplicateddata gfinalinfofield gtailreplicateddata 
-                --Add gallmetadata to gactualtruefinalheader and gfinalizeddata.
-                let gfinalfinaldata = [mapNotLast (++ "\n") gallmetadata] ++ (DL.map (mapNotLast (++ "\t")) gactualtruefinalheader) 
-                                                   ++ (DL.map (mapNotLast (++ "\t")) (notApplicableAdder gfinalizeddata))
+                let gfinalizeddata = dataCombinatorNew gannotatedheadfields gfinalinfofield gannotatedtailfields
+                let gsortedfinalizeddata = DL.map (DL.sortBy (\(a,_) (b,_) -> compare a b)) gfinalizeddata
+                let gtailfinalizeddata = DL.map (DL.map (\(a,b) -> b)) gsortedfinalizeddata
+                let gsortedactualtruefinalheader = DL.map (DL.sort) gactualtruefinalheader
+                let gfinalfinaldata = [mapNotLast (++ "\n") gallmetadata] ++ (DL.map (mapNotLast (++ "\t")) gsortedactualtruefinalheader)
+                                                   ++ (DL.map (mapNotLast (++ "\t")) (notApplicableAdder gtailfinalizeddata))
                 --Print the file to stdout (cat) or to a file.
                 if DL.length (DL.filter (isOutputFile) options) > 0
                     --Check to see if outfile is to be gzipped.
@@ -904,16 +976,6 @@ processArgsAndFilesVcfTvcf (options,inputfile) = do
                 let subfieldscsqheadersonlyinfo = DLS.splitOn "|" (DL.filter (\x -> x /= '"' && x /= '>') (DL.last (DLS.splitOn ":" csqheadersonlyinfo)))
                 --Remove "CSQ" from headersonlyinfo.
                 let finalheadersonlyinfo =  DLS.splitWhen (\x -> x == "CSQ") headersonlyinfo
-                --Add back all missed field using finalheadersonlyinfo and splitonlyequals.
-                let finalsplitonlyequals = nonCsqFieldNotApplicableAdder splitonlyequals (DL.concat finalheadersonlyinfo)
-                --Concatenate the inner lists of finalsplitonlyequals.
-                let concatfinalsplitonlyequals = DL.map (DL.concat) finalsplitonlyequals
-                --Add YES to add single elements of concatfinalsplitonlyequals.
-                let trueconcatfinalsplitonlyequals = singleYesAdder concatfinalsplitonlyequals 
-                --Sort concatfinalsplitonlyequals on heads of lists.
-                let sortedfinalsplitonlyequals = DL.map (DL.sortBy (\x y -> DO.compare (DL.head x) (DL.head y))) trueconcatfinalsplitonlyequals
-                --Take only the second element of each sublist.
-                let secondelementsortedfinal = DL.map (DL.map (DL.last)) sortedfinalsplitonlyequals
                 --Insert subfieldscsqheadersonlyinfo into finalheadersonlyinfo.
                 let finalheaders = DL.concat (insertSubfields finalheadersonlyinfo subfieldscsqheadersonlyinfo)
                 --Grab data header from dataonly.
@@ -928,19 +990,24 @@ processArgsAndFilesVcfTvcf (options,inputfile) = do
                 let headreplicateddata = dataReplicator headinfodataonly (DL.concat (DL.map (DL.map (DL.length)) splitlastsplitcomma))
                 --Replicate tailinfodataonly the correct number of times.
                 let tailreplicateddata = dataReplicator tailinfodataonly (DL.concat (DL.map (DL.map (DL.length)) splitlastsplitcomma))
-                --Replicate secondelementsortedfinal the correct number of times.                 
-                let secondelementsortedfinalreplicateddata = dataReplicator secondelementsortedfinal (DL.concat (DL.map (DL.map (DL.length)) splitlastsplitcomma))
                 --Concatenate splitlastsplitcomma.
                 let concatsplitlastsplitcomma = (DL.concat (DL.concat splitlastsplitcomma))
-                --Combine concatsplitlastsplitcomma and secondelementsortedfinalreplicateddata.
-                let finalizedinfofield = combineInfoFields secondelementsortedfinalreplicateddata concatsplitlastsplitcomma
-                --Concatenate finalizedinfofield.
+                let annotatedcsqheader = csqFieldsAdder splitlastsplitcomma subfieldscsqheadersonlyinfo
+                let annotatedcsqheaderfinal = headerFieldsAdder concatsplitlastsplitcomma subfieldscsqheadersonlyinfo
+                let concatannotatedcsqheader = DL.concat (DL.concat (annotatedcsqheader))
+                let annotatedheadfields = headerFieldsAdder headreplicateddata (DL.head finaldataheader)
+                let annotatedtailfields = headerFieldsAdder tailreplicateddata (DL.last finaldataheader)
+                let annotatednotcsqfields = notCsqFieldsAdder notcsqsplitequals
+                let annotatednotcsqfieldsaddedback = notCsqFieldsAddedBack annotatednotcsqfields (DL.concat finalheadersonlyinfo) 
+                let replicatedannotatednotcsqfinal = dataReplicator (DL.map (DL.concat) annotatednotcsqfieldsaddedback) (DL.concat (DL.map (DL.map (DL.length)) splitlastsplitcomma))
+                let finalizedinfofield = combineInfoFieldsNew replicatedannotatednotcsqfinal annotatedcsqheaderfinal
                 let finalinfofield = DL.map (DL.concat) finalizedinfofield
-                --Combined replicateddata and splitlastsplitcomma.
-                let finalizeddata = dataCombinator headreplicateddata finalinfofield tailreplicateddata
-                --Add allmetadata to actualtruefinalheader and finalizeddata.
-                let finalfinaldata = [mapNotLast (++ "\n") allmetadata] ++ (DL.map (mapNotLast (++ "\t")) actualtruefinalheader) 
-                                                  ++ (DL.map (mapNotLast (++ "\t")) (notApplicableAdder finalizeddata))
+                let finalizeddata = dataCombinatorNew annotatedheadfields finalinfofield annotatedtailfields
+                let sortedfinalizeddata = DL.map (DL.sortBy (\(a,_) (b,_) -> compare a b)) finalizeddata
+                let tailfinalizeddata = DL.map (DL.map (\(a,b) -> b)) sortedfinalizeddata
+                let sortedactualtruefinalheader = DL.map (DL.sort) actualtruefinalheader
+                let finalfinaldata = [mapNotLast (++ "\n") allmetadata] ++ (DL.map (mapNotLast (++ "\t")) sortedactualtruefinalheader)
+                                                  ++ (DL.map (mapNotLast (++ "\t")) (notApplicableAdder tailfinalizeddata))
                 --Print the file to stdout (cat) or to a file.
                 if DL.length (DL.filter (isOutputFile) options) > 0
                     --Check to see if outfile is to be gzipped.
@@ -948,7 +1015,7 @@ processArgsAndFilesVcfTvcf (options,inputfile) = do
                         then do
                             _ <- gzipPrintFile options finalfinaldata
                             return ()
-                        else noGzipPrintFile options finalfinaldata
+                       else noGzipPrintFile options finalfinaldata
                 else catFile finalfinaldata
  
 --processArgsAndContentsVcfTvcf -> This function will
@@ -1003,16 +1070,6 @@ processArgsAndContentsVcfTvcf (options,content) = do
     let subfieldscsqheadersonlyinfo = DLS.splitOn "|" (DL.filter (\x -> x /= '"' && x /= '>') (DL.last (DLS.splitOn ":" csqheadersonlyinfo)))
     --Remove "CSQ" from headersonlyinfo.
     let finalheadersonlyinfo =  DLS.splitWhen (\x -> x == "CSQ") headersonlyinfo
-    --Add back all missed field using finalheadersonlyinfo and splitonlyequals.
-    let finalsplitonlyequals = nonCsqFieldNotApplicableAdder splitonlyequals (DL.concat finalheadersonlyinfo)
-    --Concatenate the inner lists of finalsplitonlyequals.
-    let concatfinalsplitonlyequals = DL.map (DL.concat) finalsplitonlyequals
-    --Add YES to add single elements of concatfinalsplitonlyequals.
-    let trueconcatfinalsplitonlyequals = singleYesAdder concatfinalsplitonlyequals
-    --Sort concatfinalsplitonlyequals on heads of lists.
-    let sortedfinalsplitonlyequals = DL.map (DL.sortBy (\x y -> DO.compare (DL.head x) (DL.head y))) trueconcatfinalsplitonlyequals
-    --Take only the second element of each sublist.
-    let secondelementsortedfinal = DL.map (DL.map (DL.last)) sortedfinalsplitonlyequals
     --Insert subfieldscsqheadersonlyinfo into finalheadersonlyinfo.
     let finalheaders = DL.concat (insertSubfields finalheadersonlyinfo subfieldscsqheadersonlyinfo)
     --Grab data header from dataonly.
@@ -1027,19 +1084,24 @@ processArgsAndContentsVcfTvcf (options,content) = do
     let headreplicateddata = dataReplicator headinfodataonly (DL.concat (DL.map (DL.map (DL.length)) splitlastsplitcomma))
     --Replicate tailinfodataonly the correct number of times.
     let tailreplicateddata = dataReplicator tailinfodataonly (DL.concat (DL.map (DL.map (DL.length)) splitlastsplitcomma))
-    --Replicate secondelementsortedfinal the correct number of times.
-    let secondelementsortedfinalreplicateddata = dataReplicator secondelementsortedfinal (DL.concat (DL.map (DL.map (DL.length)) splitlastsplitcomma))
     --Concatenate splitlastsplitcomma.
     let concatsplitlastsplitcomma = (DL.concat (DL.concat splitlastsplitcomma))
-    --Combine concatsplitlastsplitcomma and secondelementsortedfinalreplicateddata.
-    let finalizedinfofield = combineInfoFields secondelementsortedfinalreplicateddata concatsplitlastsplitcomma
-    --Concatenate finalizedinfofield.
+    let annotatedcsqheader = csqFieldsAdder splitlastsplitcomma subfieldscsqheadersonlyinfo
+    let annotatedcsqheaderfinal = headerFieldsAdder concatsplitlastsplitcomma subfieldscsqheadersonlyinfo
+    let concatannotatedcsqheader = DL.concat (DL.concat (annotatedcsqheader))
+    let annotatedheadfields = headerFieldsAdder headreplicateddata (DL.head finaldataheader)
+    let annotatedtailfields = headerFieldsAdder tailreplicateddata (DL.last finaldataheader)
+    let annotatednotcsqfields = notCsqFieldsAdder notcsqsplitequals
+    let annotatednotcsqfieldsaddedback = notCsqFieldsAddedBack annotatednotcsqfields (DL.concat finalheadersonlyinfo)
+    let replicatedannotatednotcsqfinal = dataReplicator (DL.map (DL.concat) annotatednotcsqfieldsaddedback) (DL.concat (DL.map (DL.map (DL.length)) splitlastsplitcomma))
+    let finalizedinfofield = combineInfoFieldsNew replicatedannotatednotcsqfinal annotatedcsqheaderfinal
     let finalinfofield = DL.map (DL.concat) finalizedinfofield
-    --Combined replicateddata and splitlastsplitcomma.
-    let finalizeddata = dataCombinator headreplicateddata finalinfofield tailreplicateddata
-    --Add allmetadata to actualtruefinalheader and finalizeddata.
-    let finalfinaldata = [mapNotLast (++ "\n") allmetadata] ++ (DL.map (mapNotLast (++ "\t")) actualtruefinalheader)
-                                      ++ (DL.map (mapNotLast (++ "\t")) (notApplicableAdder finalizeddata))
+    let finalizeddata = dataCombinatorNew annotatedheadfields finalinfofield annotatedtailfields
+    let sortedfinalizeddata = DL.map (DL.sortBy (\(a,_) (b,_) -> compare a b)) finalizeddata
+    let tailfinalizeddata = DL.map (DL.map (\(a,b) -> b)) sortedfinalizeddata
+    let sortedactualtruefinalheader = DL.map (DL.sort) actualtruefinalheader
+    let finalfinaldata = [mapNotLast (++ "\n") allmetadata] ++ (DL.map (mapNotLast (++ "\t")) sortedactualtruefinalheader)
+                                      ++ (DL.map (mapNotLast (++ "\t")) (notApplicableAdder tailfinalizeddata))
     --Print the file to stdout (cat) or to a file.
     if DL.length (DL.filter (isOutputFile) options) > 0
         --Check to see if outfile is to be gzipped.
