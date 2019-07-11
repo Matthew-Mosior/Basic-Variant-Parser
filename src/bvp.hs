@@ -500,15 +500,9 @@ dataReplicator (x:xs) (y:ys) = (DL.replicate y x) ++ (dataReplicator xs ys)
 
 --dataCombinator This function will
 --combine various data fields.
-dataCombinator :: [[String]] -> [[String]] -> [[String]] -> [[String]]
+dataCombinator :: [[(String,String)]] -> [[(String,String)]] -> [[(String,String)]] -> [[(String,String)]]
 dataCombinator []     []     []     = []
 dataCombinator (a:as) (b:bs) (c:cs) = [a ++ b ++ c] ++ (dataCombinator as bs cs)
-
---dataCombinatorNew This function will
---combine various data fields.
-dataCombinatorNew :: [[(String,String)]] -> [[(String,String)]] -> [[(String,String)]] -> [[(String,String)]]
-dataCombinatorNew []     []     []     = []
-dataCombinatorNew (a:as) (b:bs) (c:cs) = [a ++ b ++ c] ++ (dataCombinatorNew as bs cs)
 
 --nonCsqFieldNotApplicableAdder -> This function will
 --add N/As for elements not seen in header list.
@@ -530,12 +524,12 @@ nonCsqFieldNotApplicableAdder (x:xs) ys = [smallNonCsqField x ys] ++ (nonCsqFiel
 --notApplicableAdder -> This function will
 --add N/A in-place of each null string.
 notApplicableAdder :: [[String]] -> [[String]]
-notApplicableAdder [] = []
+notApplicableAdder []     = []
 notApplicableAdder (x:xs) = [smallNotApplicableAdder x] ++ (notApplicableAdder xs)
     where
         --Nested function definition.--
         smallNotApplicableAdder :: [String] -> [String] 
-        smallNotApplicableAdder [] = []
+        smallNotApplicableAdder []     = []
         smallNotApplicableAdder (x:xs) = if DL.null x
                                              then ["N/A"] ++ (smallNotApplicableAdder xs)
                                              else [x] ++ (smallNotApplicableAdder xs)
@@ -543,15 +537,9 @@ notApplicableAdder (x:xs) = [smallNotApplicableAdder x] ++ (notApplicableAdder x
 
 --combineInfoFields -> This function will
 --combine the finalized INFO field.
-combineInfoFields :: [[String]] -> [[String]] -> [[[String]]]
-combineInfoFields [] [] = []
+combineInfoFields :: [[(String,String)]] -> [[(String,String)]] -> [[[(String,String)]]]
+combineInfoFields [] []         = []
 combineInfoFields (x:xs) (y:ys) = [[take 3 x] ++ [y] ++ [drop 3 x]] ++ (combineInfoFields xs ys)
-
---combineInfoFields -> This function will
---combine the finalized INFO field.
-combineInfoFieldsNew :: [[(String,String)]] -> [[(String,String)]] -> [[[(String,String)]]]
-combineInfoFieldsNew [] [] = []
-combineInfoFieldsNew (x:xs) (y:ys) = [[take 3 x] ++ [y] ++ [drop 3 x]] ++ (combineInfoFieldsNew xs ys)
 
 {----------------------------------}
 
@@ -910,9 +898,9 @@ processArgsAndFilesVcfTvcf (options,inputfile) = do
                 let gannotatednotcsqfields = notCsqFieldsAdder gnotcsqsplitequals
                 let gannotatednotcsqfieldsaddedback = notCsqFieldsAddedBack gannotatednotcsqfields (DL.concat gfinalheadersonlyinfo)
                 let greplicatedannotatednotcsqfinal = dataReplicator (DL.map (DL.concat) gannotatednotcsqfieldsaddedback) (DL.concat (DL.map (DL.map (DL.length)) gsplitlastsplitcomma))
-                let gfinalizedinfofield = combineInfoFieldsNew greplicatedannotatednotcsqfinal gannotatedcsqheaderfinal
+                let gfinalizedinfofield = combineInfoFields greplicatedannotatednotcsqfinal gannotatedcsqheaderfinal
                 let gfinalinfofield = DL.map (DL.concat) gfinalizedinfofield
-                let gfinalizeddata = dataCombinatorNew gannotatedheadfields gfinalinfofield gannotatedtailfields
+                let gfinalizeddata = dataCombinator gannotatedheadfields gfinalinfofield gannotatedtailfields
                 let gsortedfinalizeddata = DL.map (DL.sortBy (\(a,_) (b,_) -> compare a b)) gfinalizeddata
                 let gtailfinalizeddata = DL.map (DL.map (\(a,b) -> b)) gsortedfinalizeddata
                 let gsortedactualtruefinalheader = DL.map (DL.sort) gactualtruefinalheader
@@ -1000,9 +988,9 @@ processArgsAndFilesVcfTvcf (options,inputfile) = do
                 let annotatednotcsqfields = notCsqFieldsAdder notcsqsplitequals
                 let annotatednotcsqfieldsaddedback = notCsqFieldsAddedBack annotatednotcsqfields (DL.concat finalheadersonlyinfo) 
                 let replicatedannotatednotcsqfinal = dataReplicator (DL.map (DL.concat) annotatednotcsqfieldsaddedback) (DL.concat (DL.map (DL.map (DL.length)) splitlastsplitcomma))
-                let finalizedinfofield = combineInfoFieldsNew replicatedannotatednotcsqfinal annotatedcsqheaderfinal
+                let finalizedinfofield = combineInfoFields replicatedannotatednotcsqfinal annotatedcsqheaderfinal
                 let finalinfofield = DL.map (DL.concat) finalizedinfofield
-                let finalizeddata = dataCombinatorNew annotatedheadfields finalinfofield annotatedtailfields
+                let finalizeddata = dataCombinator annotatedheadfields finalinfofield annotatedtailfields
                 let sortedfinalizeddata = DL.map (DL.sortBy (\(a,_) (b,_) -> compare a b)) finalizeddata
                 let tailfinalizeddata = DL.map (DL.map (\(a,b) -> b)) sortedfinalizeddata
                 let sortedactualtruefinalheader = DL.map (DL.sort) actualtruefinalheader
@@ -1094,9 +1082,9 @@ processArgsAndContentsVcfTvcf (options,content) = do
     let annotatednotcsqfields = notCsqFieldsAdder notcsqsplitequals
     let annotatednotcsqfieldsaddedback = notCsqFieldsAddedBack annotatednotcsqfields (DL.concat finalheadersonlyinfo)
     let replicatedannotatednotcsqfinal = dataReplicator (DL.map (DL.concat) annotatednotcsqfieldsaddedback) (DL.concat (DL.map (DL.map (DL.length)) splitlastsplitcomma))
-    let finalizedinfofield = combineInfoFieldsNew replicatedannotatednotcsqfinal annotatedcsqheaderfinal
+    let finalizedinfofield = combineInfoFields replicatedannotatednotcsqfinal annotatedcsqheaderfinal
     let finalinfofield = DL.map (DL.concat) finalizedinfofield
-    let finalizeddata = dataCombinatorNew annotatedheadfields finalinfofield annotatedtailfields
+    let finalizeddata = dataCombinator annotatedheadfields finalinfofield annotatedtailfields
     let sortedfinalizeddata = DL.map (DL.sortBy (\(a,_) (b,_) -> compare a b)) finalizeddata
     let tailfinalizeddata = DL.map (DL.map (\(a,b) -> b)) sortedfinalizeddata
     let sortedactualtruefinalheader = DL.map (DL.sort) actualtruefinalheader
