@@ -1,9 +1,17 @@
 {-=BasicVariantParser (BVP): A Haskell-based solution=-}
-{-=to ensembl-vep ouput file parsing.=-}
+{-=to various variant calling file format parsing.=-}
 {-=Author: Matthew Mosior=-}
-{-=Version: 2.0=-}
-{-=Synopsis:  This Haskell Script will take in=-} 
-{-=a .vcf or .vep file and parse it accordingly.=-}
+{-=Version: 3.0=-}
+{-=Synopsis: This Haskell script will take in=-} 
+{-=a vcf or vep file and parse it accordingly.=-}
+
+
+{-Lanuguage Extension.-}
+
+{-# LANGUAGE MultiWayIf #-}
+
+{----------------------}
+
 
 {-Imports-}
 
@@ -114,6 +122,7 @@ checkInFormat :: String -> Bool
 checkInFormat [] = False
 checkInFormat xs = if xs == "vcf" || xs == "vep"
                    || xs == "tvcf" || xs == "tvep"
+                   || xs == "mgivcf" || xs == "mgitvcf"
                        then True
                        else False
 
@@ -123,6 +132,7 @@ checkOutFormat :: String -> Bool
 checkOutFormat [] = False
 checkOutFormat xs = if xs == "tvcf" || xs == "tvep"
                     || xs == "vcf"  || xs == "vep"
+                    || xs == "mgivcf" || xs == "mgitvcf"
                         then True
                         else False
 
@@ -136,6 +146,8 @@ checkInOutFormats xs ys = if (xs == "vep" && ys == "tvep")
                           || (xs == "tvep" && ys == "vep") 
                           || (xs == "vcf" && ys == "tvcf")
                           || (xs == "tvcf" && ys == "vcf")
+                          || (xs == "mgivcf" && ys == "mgitvcf")
+                          || (xs == "mgitvcf" && ys == "mgivcf")
                               then True 
                               else False
 
@@ -149,51 +161,51 @@ compilerOpts :: [String] -> IO ([Flag],String)
 compilerOpts argv =
     case getOpt Permute options argv of
         (args,file,[]) ->
-            if DL.elem Help args
-                then do hPutStrLn stderr (greeting ++ SCG.usageInfo header options)
-                        SX.exitWith SX.ExitSuccess
-                else if DL.elem Version args
-                    then do hPutStrLn stderr (version ++ SCG.usageInfo header options)
-                            SX.exitWith SX.ExitSuccess
-                    else if (DL.length (DL.filter (isInFormat) args) < 1)
-                        then do hPutStrLn stderr (inerror ++ formats ++ SCG.usageInfo header options)
-                                SX.exitWith (SX.ExitFailure 1)
-                        else if (DL.length (DL.filter (isInFormat) args) > 0) &&
-                                (not (checkInFormat (extractInFormat (DL.head (DL.filter (isInFormat) args)))))
-                            then do hPutStrLn stderr (inferror ++ formats ++ SCG.usageInfo header options)
-                                    SX.exitWith (SX.ExitFailure 1)
-                            else if (DL.length (DL.filter (isOutFormat) args) < 1)
-                                then do hPutStrLn stderr (outerror ++ formats ++ SCG.usageInfo header options)
-                                        SX.exitWith (SX.ExitFailure 1)
-                                else if (DL.length (DL.filter (isOutFormat) args) > 0) &&
-                                        (not (checkOutFormat (extractOutFormat (DL.head (DL.filter (isOutFormat) args)))))
-                                    then do hPutStrLn stderr (outferror ++ formats ++ SCG.usageInfo header options)
-                                            SX.exitWith (SX.ExitFailure 1)
-                                    else if (DL.length (DL.filter (isInFormat) args) < 1) &&
-                                            (DL.length (DL.filter (isOutFormat) args) < 1)
-                                        then do hPutStrLn stderr (inerror ++ outerror ++ SCG.usageInfo header options) 
-                                                SX.exitWith (SX.ExitFailure 1)
-                                        else if (DL.length (DL.filter (isInFormat) args) > 0) &&
-                                                (DL.length (DL.filter (isOutFormat) args) > 0) &&
-                                                (not (checkInOutFormats (extractInFormat (DL.head (DL.filter (isInFormat) args))) 
-                                                                        (extractOutFormat (DL.head (DL.filter (isOutFormat) args)))))
-                                            then do hPutStrLn stderr (inoutmismatch ++ inoutmappings ++ SCG.usageInfo header options)
-                                                    SX.exitWith (SX.ExitFailure 1)
-                                            else if (DL.length (DL.filter (isGzipOut) args) > 0) &&
-                                                    (DL.length (DL.filter (isOutputFile) args) < 1) 
-                                                then do hPutStrLn stderr (gziperror ++ SCG.usageInfo header options)
-                                                        SX.exitWith (ExitFailure 1)
-                                                else if DL.length file > 1
-                                                    then do hPutStrLn stderr (flerror ++ greeting ++ github ++ SCG.usageInfo header options)
-                                                            SX.exitWith (SX.ExitFailure 1)
-                                                    else return (DL.nub args, DL.concat file)
+            if | DL.elem Help args ->
+               do hPutStrLn stderr (greeting ++ "\n" ++ SCG.usageInfo header options)
+                  SX.exitWith SX.ExitSuccess
+               | DL.elem Version args -> 
+               do hPutStrLn stderr (version ++ "\n" ++ SCG.usageInfo header options)
+                  SX.exitWith SX.ExitSuccess
+               | DL.length (DL.filter (isInFormat) args) < 1 -> 
+               do hPutStrLn stderr (inerror ++ formats ++ "\n" ++ SCG.usageInfo header options)
+                  SX.exitWith (SX.ExitFailure 1)
+               | (DL.length (DL.filter (isInFormat) args) > 0) &&
+                 (not (checkInFormat (extractInFormat (DL.head (DL.filter (isInFormat) args))))) ->
+               do hPutStrLn stderr (inferror ++ formats ++ "\n" ++ SCG.usageInfo header options)
+                  SX.exitWith (SX.ExitFailure 1)
+               | DL.length (DL.filter (isOutFormat) args) < 1 ->
+               do hPutStrLn stderr (outerror ++ formats ++ "\n" ++ SCG.usageInfo header options)
+                  SX.exitWith (SX.ExitFailure 1)
+               | (DL.length (DL.filter (isOutFormat) args) > 0) &&
+                 (not (checkOutFormat (extractOutFormat (DL.head (DL.filter (isOutFormat) args))))) ->
+               do hPutStrLn stderr (outferror ++ formats ++ "\n" ++ SCG.usageInfo header options)
+                  SX.exitWith (SX.ExitFailure 1)
+               | (DL.length (DL.filter (isInFormat) args) < 1) &&
+                 (DL.length (DL.filter (isOutFormat) args) < 1) ->
+               do hPutStrLn stderr (inerror ++ outerror ++ "\n" ++ SCG.usageInfo header options) 
+                  SX.exitWith (SX.ExitFailure 1)
+               | (DL.length (DL.filter (isInFormat) args) > 0) &&
+                 (DL.length (DL.filter (isOutFormat) args) > 0) &&
+                 (not (checkInOutFormats (extractInFormat (DL.head (DL.filter (isInFormat) args))) 
+                                         (extractOutFormat (DL.head (DL.filter (isOutFormat) args))))) ->
+               do hPutStrLn stderr (inoutmismatch ++ inoutmappings ++ "\n" ++ SCG.usageInfo header options)
+                  SX.exitWith (SX.ExitFailure 1)
+               | (DL.length (DL.filter (isGzipOut) args) > 0) &&
+                 (DL.length (DL.filter (isOutputFile) args) < 1) -> 
+               do hPutStrLn stderr (gziperror ++ "\n" ++ SCG.usageInfo header options)
+                  SX.exitWith (ExitFailure 1)
+               | DL.length file > 1 ->
+               do hPutStrLn stderr (flerror ++ greeting ++ github ++ "\n" ++ SCG.usageInfo header options)
+                  SX.exitWith (SX.ExitFailure 1)
+               | otherwise -> return (DL.nub args, DL.concat file)
         (_,_,errors) -> do
-            hPutStrLn stderr (DL.concat errors ++ SCG.usageInfo header options)
+            hPutStrLn stderr (DL.concat errors ++ "\n" ++ SCG.usageInfo header options)
             SX.exitWith (SX.ExitFailure 1)
         where
             greeting       = "Basic Variant Parser, Copyright (c) 2019 Matthew Mosior.\n"
-            header         = "Usage: bvp [-vV?IoOgG] [file]"
-            version        = "Basic Variant Parser (BVP), Version 2.0.\n"
+            header         = "Usage: bvp [-vV?IoOgG] [file]\n"
+            version        = "Basic Variant Parser (BVP), Version 3.0.\n"
             github         = "Please see https://github.com/Matthew-Mosior/Basic-Variant-Parser for more information.\n"
             flerror        = "Incorrect number of input files:  Please provide one input file.\n" 
             inerror        = "Please provide an input format (-I).\n"
@@ -201,9 +213,9 @@ compilerOpts argv =
             inferror       = "Input format not recognized.\n" 
             outferror      = "Output format not recognized.\n"
             gziperror      = "OutputFile argument (-o) necessary to use GzipOut argument (-G).\n"
-            formats        = "Accepted formats are vcf, vep, tvcf and tvep.\n"
+            formats        = "Allowed formats are:\nvcf\nmgivcf\nvep\ntvcf\nmgitvcf\ntvep.\n"
             inoutmismatch  = "Please provide an appropriate input/output mapping.\n"
-            inoutmappings  = "Appropriate mappings are: vep <-> tvep and vcf <-> tvcf.\n"
+            inoutmappings  = "Allowed mappings are:\nvep <-> tvep\nvcf <-> tvcf\nmgivcf <-> mgitvcf.\n"
 
 {----------------------------------------}
 
@@ -214,13 +226,17 @@ compilerOpts argv =
 --will follow.
 vepOrVcfPipeline :: [Flag] -> (String,String)
 vepOrVcfPipeline []      = ([],[])
-vepOrVcfPipeline options = if instring == "vep" && outstring == "tvep"
-                               then ("vep","tvep")
-                               else if instring == "tvep" && outstring == "vep"
-                                   then ("tvep","vep")
-                                   else if instring == "vcf" && outstring == "tvcf"
-                                       then ("vcf","tvcf")
-                                       else ("tvcf","vcf")
+vepOrVcfPipeline options = if | instring == "vep" && outstring == "tvep" ->
+                              ("vep","tvep")
+                              | instring == "tvep" && outstring == "vep" ->
+                              ("tvep","vep")
+                              | instring == "vcf" && outstring == "tvcf" ->
+                              ("vcf","tvcf")
+                              | instring == "mgivcf" && outstring == "mgitvcf" ->
+                              ("mgivcf","mgitvcf")
+                              | instring == "mgitvcf" && outstring == "mgivcf" ->
+                              ("mgitvcf","mgivcf")
+                              | otherwise -> ("tvcf","vcf")
     where
         --Local definitions.--
         instring  = extractInFormat (DL.head (DL.filter (isInFormat) options))
@@ -309,7 +325,9 @@ columnMatcher (x:xs) ys = [smallColumnMatcher x ys] ++ (columnMatcher xs ys)
         smallColumnMatcher [] []     = []
         smallColumnMatcher [] _      = []
         smallColumnMatcher _ []      = []
-        smallColumnMatcher (x:xs) ys = [[((singleunnest (singleunnest (DL.filter (\y -> (fst (fst x)) == (singleunnest y)) ys))),snd x)]] ++ (smallColumnMatcher xs ys)
+        smallColumnMatcher (x:xs) ys = [[((singleunnest (singleunnest (DL.filter 
+                                         (\y -> (fst (fst x)) == (singleunnest y)) ys))),snd x)]] 
+                                      ++ (smallColumnMatcher xs ys)
         ------------------------------
 
 --missingColumnAdder -> This function will
@@ -340,6 +358,7 @@ mergeLists _  []         = []
 mergeLists (x:xs) (y:ys) = [x ++ y] ++ (mergeLists xs ys)
 
 {----------------------------}
+
 
 {-General utility functions (VCF).-}
 
@@ -434,7 +453,9 @@ notCsqFieldsAddedBack (x:xs) ys = [smallNotCsqFieldsAddedBack x ys] ++ (notCsqFi
         smallNotCsqFieldsAddedBack [] []     = []
         smallNotCsqFieldsAddedBack _  []     = []
         smallNotCsqFieldsAddedBack [] _      = []
-        smallNotCsqFieldsAddedBack xs ys = [DL.zip (ys DL.\\ (DL.map (fst) (DL.concat xs))) (DL.replicate (DL.length (ys DL.\\ (DL.map (fst) (DL.concat xs)))) "N/A")] ++ xs
+        smallNotCsqFieldsAddedBack xs ys = [DL.zip (ys DL.\\ (DL.map (fst) (DL.concat xs))) 
+                                                   (DL.replicate (DL.length (ys DL.\\ (DL.map (fst) (DL.concat xs))))
+                                             "N/A")] ++ xs
 
 --csqFieldsAdder -> This function will
 --annotate the CSQ fields.
@@ -534,6 +555,18 @@ notApplicableAdder (x:xs) = [smallNotApplicableAdder x] ++ (notApplicableAdder x
                                              then ["N/A"] ++ (smallNotApplicableAdder xs)
                                              else [x] ++ (smallNotApplicableAdder xs)
         -------------------------------
+
+--formatNAAdder -> This function will
+--add N/A's back to NORMAL and TUMOR fields
+--for mgivcf's.
+formatNAAdder :: [[(String,String)]] -> [String] -> [[(String,String)]]
+formatNAAdder []     [] = []
+formatNAAdder []     _  = []
+formatNAAdder _      [] = []
+formatNAAdder (x:xs) ys = [DL.sortBy (DO.comparing fst)
+                           (x ++ (DL.map (\x -> (x,"N/A"))
+                           (ys DL.\\ (DL.map (fst) (x)))))] ++
+                          (formatNAAdder xs ys)
 
 --combineInfoFields -> This function will
 --combine the finalized INFO field.
@@ -855,7 +888,9 @@ processArgsAndFilesVcfTvcf (options,inputfile) = do
                 --Grab all elements except for the for the list with "CSQ" as the first (head) element.
                 let gnotcsqsplitequals = DL.concat (DL.map (DL.map (DL.filter (\x -> DL.head x /= "CSQ"))) gsplitequals)
                 --Grab the index of the list with "CSQ" as the first (head) element.
-                let gcsqsplitequalsindex = DL.map (DL.map (DM.fromJust)) (DL.map (DL.map (DL.elemIndex "CSQ")) (DL.map (DL.map (DL.map (DL.head))) gsplitequals))
+                let gcsqsplitequalsindex = DL.map (DL.map (DM.fromJust)) 
+                                                  (DL.map (DL.map (DL.elemIndex "CSQ")) 
+                                                  (DL.map (DL.map (DL.map (DL.head))) gsplitequals))
                 --Grab only the list with "CSQ" as the first (head) element.
                 let gcsqsplitequals = DL.map (DL.map (DL.filter (\x -> DL.head x == "CSQ"))) gsplitequals
                 --Grab only the last element of gheadsplitequals
@@ -897,7 +932,9 @@ processArgsAndFilesVcfTvcf (options,inputfile) = do
                 let gannotatedtailfields = headerFieldsAdder gtailreplicateddata (DL.last gfinaldataheader)
                 let gannotatednotcsqfields = notCsqFieldsAdder gnotcsqsplitequals
                 let gannotatednotcsqfieldsaddedback = notCsqFieldsAddedBack gannotatednotcsqfields (DL.concat gfinalheadersonlyinfo)
-                let greplicatedannotatednotcsqfinal = dataReplicator (DL.map (DL.concat) gannotatednotcsqfieldsaddedback) (DL.concat (DL.map (DL.map (DL.length)) gsplitlastsplitcomma))
+                let greplicatedannotatednotcsqfinal = dataReplicator 
+                                                      (DL.map (DL.concat) gannotatednotcsqfieldsaddedback) 
+                                                      (DL.concat (DL.map (DL.map (DL.length)) gsplitlastsplitcomma))
                 let gfinalizedinfofield = combineInfoFields greplicatedannotatednotcsqfinal gannotatedcsqheaderfinal
                 let gfinalinfofield = DL.map (DL.concat) gfinalizedinfofield
                 let gfinalizeddata = dataCombinator gannotatedheadfields gfinalinfofield gannotatedtailfields
@@ -947,7 +984,9 @@ processArgsAndFilesVcfTvcf (options,inputfile) = do
                 --Grab all elements except for the for the list with "CSQ" as the first (head) element.
                 let notcsqsplitequals = DL.concat (DL.map (DL.map (DL.filter (\x -> DL.head x /= "CSQ"))) splitequals)
                 --Grab the index of the list with "CSQ" as the first (head) element.
-                let csqsplitequalsindex = DL.map (DL.map (DM.fromJust)) (DL.map (DL.map (DL.elemIndex "CSQ")) (DL.map (DL.map (DL.map (DL.head))) splitequals))
+                let csqsplitequalsindex = DL.map (DL.map (DM.fromJust)) 
+                                                 (DL.map (DL.map (DL.elemIndex "CSQ")) 
+                                                 (DL.map (DL.map (DL.map (DL.head))) splitequals))
                 --Grab only the last element of csqsplitequals.
                 let lastcsq = DL.map (DL.last) csqsplitequals
                 --Split each subfield of the sublists of splitequals by comma delimiter.
@@ -987,7 +1026,9 @@ processArgsAndFilesVcfTvcf (options,inputfile) = do
                 let annotatedtailfields = headerFieldsAdder tailreplicateddata (DL.last finaldataheader)
                 let annotatednotcsqfields = notCsqFieldsAdder notcsqsplitequals
                 let annotatednotcsqfieldsaddedback = notCsqFieldsAddedBack annotatednotcsqfields (DL.concat finalheadersonlyinfo) 
-                let replicatedannotatednotcsqfinal = dataReplicator (DL.map (DL.concat) annotatednotcsqfieldsaddedback) (DL.concat (DL.map (DL.map (DL.length)) splitlastsplitcomma))
+                let replicatedannotatednotcsqfinal = dataReplicator 
+                                                     (DL.map (DL.concat) annotatednotcsqfieldsaddedback) 
+                                                     (DL.concat (DL.map (DL.map (DL.length)) splitlastsplitcomma))
                 let finalizedinfofield = combineInfoFields replicatedannotatednotcsqfinal annotatedcsqheaderfinal
                 let finalinfofield = DL.map (DL.concat) finalizedinfofield
                 let finalizeddata = dataCombinator annotatedheadfields finalinfofield annotatedtailfields
@@ -1041,7 +1082,9 @@ processArgsAndContentsVcfTvcf (options,content) = do
     --Grab all elements except for the for the list with "CSQ" as the first (head) element.
     let notcsqsplitequals = DL.concat (DL.map (DL.map (DL.filter (\x -> DL.head x /= "CSQ"))) splitequals)
     --Grab the index of the list with "CSQ" as the first (head) element.
-    let csqsplitequalsindex = DL.map (DL.map (DM.fromJust)) (DL.map (DL.map (DL.elemIndex "CSQ")) (DL.map (DL.map (DL.map (DL.head))) splitequals))
+    let csqsplitequalsindex = DL.map (DL.map (DM.fromJust)) 
+                                     (DL.map (DL.map (DL.elemIndex "CSQ")) 
+                                     (DL.map (DL.map (DL.map (DL.head))) splitequals))
     --Grab only the last element of csqsplitequals.
     let lastcsq = DL.map (DL.last) csqsplitequals
     --Split each subfield of the sublists of splitequals by comma delimiter.
@@ -1081,7 +1124,9 @@ processArgsAndContentsVcfTvcf (options,content) = do
     let annotatedtailfields = headerFieldsAdder tailreplicateddata (DL.last finaldataheader)
     let annotatednotcsqfields = notCsqFieldsAdder notcsqsplitequals
     let annotatednotcsqfieldsaddedback = notCsqFieldsAddedBack annotatednotcsqfields (DL.concat finalheadersonlyinfo)
-    let replicatedannotatednotcsqfinal = dataReplicator (DL.map (DL.concat) annotatednotcsqfieldsaddedback) (DL.concat (DL.map (DL.map (DL.length)) splitlastsplitcomma))
+    let replicatedannotatednotcsqfinal = dataReplicator 
+                                         (DL.map (DL.concat) annotatednotcsqfieldsaddedback) 
+                                         (DL.concat (DL.map (DL.map (DL.length)) splitlastsplitcomma))
     let finalizedinfofield = combineInfoFields replicatedannotatednotcsqfinal annotatedcsqheaderfinal
     let finalinfofield = DL.map (DL.concat) finalizedinfofield
     let finalizeddata = dataCombinator annotatedheadfields finalinfofield annotatedtailfields
@@ -1132,6 +1177,388 @@ processArgsAndContentsTvcfVcf (options,content) = do
     --Grab only the data portion of processedfile.
     print "tvcfvcfcontents"
 
+--processArgsAndFilesMgivcfMgitvcf -> This function will
+--walk through each of the command-line
+--arguments and files provided by the user.
+processArgsAndFilesMgivcfMgitvcf :: ([Flag],String) -> IO ()
+processArgsAndFilesMgivcfMgitvcf ([],[]) = return ()
+processArgsAndFilesMgivcfMgitvcf (options,inputfile) = do
+    --Check to see if inputfile is gzip compressed.
+    if DL.elem GzipIn options
+        then do --Decompress the file.
+                SP.readProcess "gunzip" [inputfile] []
+                --Read the decompressed file.
+                gunzippedfile <- SIO.readFile (DLE.dropSuffix ".gz" inputfile)
+                --Apply lineFeed function to gunzippedfile.
+                let gprocessedfile = lineFeed gunzippedfile    
+                --Apply lines to inputfile.
+                let gprocessedfilenew = DL.lines gunzippedfile
+                --Grab only the data portion of gprocessedfile.
+                let gonlyinfo = onlyInfoGrabber gprocessedfile
+                --Grab only the data lines in gprocessedfile.
+                let gdataonly = onlyDataVcfGrabber gprocessedfile
+                --Grab all metadata lines from gprocessedfile.
+                let gallmetadata = onlyMetadataGrabber gprocessedfilenew
+                --Grab only the INFO field of gdataonly.
+                let ginfodataonly = DL.map (\x -> [x DL.!! 7]) (DL.tail gdataonly)
+                --Grab all head fields except for the INFO field of gdataonly.
+                let gheadinfodataonly = DL.map (DL.take 7) (DL.tail gdataonly)
+                --Grab all tail fields except for the INFO field of gdataonly.
+                let gtailinfodataonly = DL.map (DL.drop 8) (DL.tail gdataonly)
+                --Split the subfields of gdataonly by semicolon delimiter.
+                let gsplitsemicolon = DL.map (DL.map (DLS.splitOn ";")) ginfodataonly
+                --Grab only data with equals from gsplitsemicolon.
+                let gonlyequalssplitsemicolon = infixFilter gsplitsemicolon
+                --Turn gonlyequalssplitsemicolon from lists into tuples.
+                let gsplitonlyequals = DL.map (DL.map (DL.map (\x -> DLS.splitOneOf "=" x))) gonlyequalssplitsemicolon
+                --Split each subfield of the subfields of gsplitsemicolon by equal-sign delimiter.
+                let gsplitequals = DL.map (DL.map (DL.map (DLS.splitOn "="))) gsplitsemicolon
+                --Grab only the list with "CSQ" as the first (head) element.
+                let gcsqsplitequals = DL.map (DL.map (DL.filter (\x -> DL.head x == "CSQ"))) gsplitequals
+                --Grab all elements except for the for the list with "CSQ" as the first (head) element.
+                let gnotcsqsplitequals = DL.concat (DL.map (DL.map (DL.filter (\x -> DL.head x /= "CSQ"))) gsplitequals)
+                --Grab the index of the list with "CSQ" as the first (head) element.
+                let gcsqsplitequalsindex = DL.map (DL.map (DM.fromJust)) 
+                                                  (DL.map (DL.map (DL.elemIndex "CSQ")) 
+                                                  (DL.map (DL.map (DL.map (DL.head))) gsplitequals))
+                --Grab only the last element of gcsqsplitequals.
+                let glastcsq = DL.map (DL.last) gcsqsplitequals
+                --Split each subfield of the sublists of splitequals by comma delimiter.
+                let gsplitcomma = DL.map (DL.map (DL.map (DLS.splitOn ","))) glastcsq
+                --Grab the last field of gsplitcomma.
+                let glastsplitcomma = DL.map (DL.map (DL.last)) gsplitcomma
+                --Split each item in glastsplitcomma by | delimiter.
+                let gsplitlastsplitcomma = DL.map (DL.map (DL.map (DLS.splitOn "|"))) glastsplitcomma
+                --Grab just the headers for the fields of gonlyinfo.
+                let gheadersonlyinfo = DL.nub (DL.map (DL.head) (DL.concat (DL.concat gsplitequals)))
+                --Grab just the CSQ header from gonlyinfo.
+                let gcsqheadersonlyinfo = DL.concat (DL.concat (DL.filter (DL.any (\x -> DL.isInfixOf "##INFO=<ID=CSQ" x)) gonlyinfo))
+                --Grab the subfields from gcsqheadersonlyinfo.
+                let gsubfieldscsqheadersonlyinfo = DLS.splitOn "|" (DL.filter (\x -> x /= '"' && x /= '>') (DL.last (DLS.splitOn ":" gcsqheadersonlyinfo)))
+                --Remove "CSQ" from gheadersonlyinfo.
+                let gfinalheadersonlyinfo =  DLS.splitWhen (\x -> x == "CSQ") gheadersonlyinfo
+                --Insert gsubfieldscsqheadersonlyinfo into gfinalheadersonlyinfo.
+                let gfinalheaders = DL.concat (insertSubfields gfinalheadersonlyinfo gsubfieldscsqheadersonlyinfo)
+                --Grab data header from gdataonly.
+                let gdataheader = DL.concat (DL.filter (\x -> DL.head x == "#CHROM") gdataonly)
+                --Remove "INFO" from gdataheader.
+                let gfinaldataheader = DLS.splitWhen (\x -> x == "INFO") gdataheader
+                --Insert gfinalheaders into gfinaldataheader.
+                let gtruefinalheader = DL.concat (insertSubfields gfinaldataheader gfinalheaders)
+                --Remove CSQ from gtruefinalheader.
+                let gactualtruefinalheader = DLS.splitWhen (\x -> x == "CSQ") gtruefinalheader
+                --Replicate gheadinfodataonly the correct number of times.
+                let gheadreplicateddata = dataReplicator gheadinfodataonly (DL.concat (DL.map (DL.map (DL.length)) gsplitlastsplitcomma))
+                --Replicate tailinfodataonly the correct number of times.
+                let gtailreplicateddata = dataReplicator gtailinfodataonly (DL.concat (DL.map (DL.map (DL.length)) gsplitlastsplitcomma))
+                --Create gformatfinalheaders.
+                let gformatfinalheaders = ((DL.map (\x -> "FORMAT.NORMAL." ++ x) 
+                                           (DL.nub (DL.sort (DL.concat (DL.map (DLS.splitOn ":") 
+                                           (DL.nub (DL.sort (DL.map (DL.head) gtailinfodataonly)))))))) ++
+                                           (DL.map (\x -> "FORMAT.TUMOR." ++ x) 
+                                           (DL.nub (DL.sort (DL.concat (DL.map (DLS.splitOn ":") 
+                                           (DL.nub (DL.sort (DL.map (DL.head) gtailinfodataonly)))))))))
+                --Create gformatdata.
+                let gformatdata = DL.map (\[x,y,z] -> 
+                                         (DL.zip (DL.map (\x -> "FORMAT.NORMAL." ++ x) (DLS.splitOn ":" x)) (DLS.splitOn ":" y)) 
+                                      ++ (DL.zip (DL.map (\x -> "FORMAT.TUMOR." ++ x) (DLS.splitOn ":" x)) (DLS.splitOn ":" z))) gtailinfodataonly
+                --Create gfinalformatdata.
+                let gfinalformatdata = formatNAAdder gformatdata gformatfinalheaders
+                --Create gtruefinalformatdata.
+                let gtruefinalformatdata = dataReplicator gfinalformatdata (DL.concat (DL.map (DL.map (DL.length)) gsplitlastsplitcomma))
+                --Create finalfinaldataheader.
+                let gfinalfinaldataheader = [DL.head (DLS.splitWhen (\x -> x == "INFO") gdataheader)] ++ [gformatfinalheaders]
+                --Create gtruefinafinalheader.
+                let gtruefinalfinalheader = DL.concat (insertSubfields gfinalfinaldataheader gfinalheaders)
+                --Create gactualtruefinalfinalheader.
+                let gactualtruefinalfinalheader = DLS.splitWhen (\x -> x == "CSQ") gtruefinalfinalheader
+                ----Concatenate gsplitlastsplitcomma.
+                let gconcatsplitlastsplitcomma = (DL.concat (DL.concat gsplitlastsplitcomma))
+                let gannotatedcsqheader = csqFieldsAdder gsplitlastsplitcomma gsubfieldscsqheadersonlyinfo
+                let gannotatedcsqheaderfinal = headerFieldsAdder gconcatsplitlastsplitcomma gsubfieldscsqheadersonlyinfo
+                let gconcatannotatedcsqheader = DL.concat (DL.concat (gannotatedcsqheader))
+                let gannotatedheadfields = headerFieldsAdder gheadreplicateddata (DL.head gfinaldataheader)
+                let gannotatedtailfields = headerFieldsAdder gtailreplicateddata (DL.last gfinaldataheader)
+                let gannotatednotcsqfields = notCsqFieldsAdder gnotcsqsplitequals
+                let gannotatednotcsqfieldsaddedback = notCsqFieldsAddedBack gannotatednotcsqfields (DL.concat gfinalheadersonlyinfo)
+                let greplicatedannotatednotcsqfinal = dataReplicator
+                                                     (DL.map (DL.concat) gannotatednotcsqfieldsaddedback)
+                                                     (DL.concat (DL.map (DL.map (DL.length)) gsplitlastsplitcomma))
+                let gfinalizedinfofield = combineInfoFields greplicatedannotatednotcsqfinal gannotatedcsqheaderfinal
+                let gfinalinfofield = DL.map (DL.concat) gfinalizedinfofield 
+                let gfinalizeddata = dataCombinator gannotatedheadfields gfinalinfofield gtruefinalformatdata
+                let gsortedfinalizeddata = DL.map (DL.sortBy (\(a,_) (b,_) -> compare a b)) gfinalizeddata
+                let gtailfinalizeddata = DL.map (DL.map (\(a,b) -> b)) gsortedfinalizeddata
+                let gsortedactualtruefinalfinalheader = DL.map (DL.sort) gactualtruefinalfinalheader
+                let gfinalfinaldata = [mapNotLast (++ "\n") gallmetadata] ++ (DL.map (mapNotLast (++ "\t")) gsortedactualtruefinalfinalheader)
+                                                  ++ (DL.map (mapNotLast (++ "\t")) (notApplicableAdder gtailfinalizeddata))
+                --Print the file to stdout (cat) or to a file.
+                if DL.length (DL.filter (isOutputFile) options) > 0
+                    --Check to see if outfile is to be gzipped.
+                    then if DL.elem GzipOut options
+                        then do
+                            _ <- gzipPrintFile options gfinalfinaldata
+                            return ()
+                        else noGzipPrintFile options gfinalfinaldata
+                else catFile gfinalfinaldata
+
+        else do --Read in the file.
+                readinputfile <- SIO.readFile inputfile
+                --Apply lineFeed function to inputfile.
+                let processedfile = lineFeed readinputfile
+                --Apply lines to inputfile.
+                let processedfilenew = DL.lines readinputfile
+                --Grab only the data portion of processedfile.
+                let onlyinfo = onlyInfoGrabber processedfile
+                --Grab only the data lines in processedfile.
+                let dataonly = onlyDataVcfGrabber processedfile
+                --Grab all metadata lines from processedfile.
+                let allmetadata = onlyMetadataGrabber processedfilenew
+                --Grab only the INFO field of dataonly.
+                let infodataonly = DL.map (\x -> [x DL.!! 7]) (DL.tail dataonly)
+                --Grab all head fields except for the INFO field of dataonly.
+                let headinfodataonly = DL.map (DL.take 7) (DL.tail dataonly)
+                --Grab all tail fields except for the INFO field of dataonly.
+                let tailinfodataonly = DL.map (DL.drop 8) (DL.tail dataonly)
+                --Split the subfields of gdataonly by semicolon delimiter.
+                let splitsemicolon = DL.map (DL.map (DLS.splitOn ";")) infodataonly
+                --Grab only data with equals from splitsemicolon.
+                let onlyequalssplitsemicolon = infixFilter splitsemicolon
+                --Turn onlyequalssplitsemicolon from lists into tuples.
+                let splitonlyequals = DL.map (DL.map (DL.map (\x -> DLS.splitOneOf "=" x))) onlyequalssplitsemicolon
+                --Split each subfield of the subfields of splitsemicolon by equal-sign delimiter.
+                let splitequals = DL.map (DL.map (DL.map (DLS.splitOn "="))) splitsemicolon
+                --Grab only the list with "CSQ" as the first (head) element.
+                let csqsplitequals = DL.map (DL.map (DL.filter (\x -> DL.head x == "CSQ"))) splitequals
+                --Grab all elements except for the for the list with "CSQ" as the first (head) element.
+                let notcsqsplitequals = DL.concat (DL.map (DL.map (DL.filter (\x -> DL.head x /= "CSQ"))) splitequals)
+                --Grab the index of the list with "CSQ" as the first (head) element.
+                let csqsplitequalsindex = DL.map (DL.map (DM.fromJust)) 
+                                                 (DL.map (DL.map (DL.elemIndex "CSQ")) 
+                                                 (DL.map (DL.map (DL.map (DL.head))) splitequals))
+                --Grab only the last element of csqsplitequals.
+                let lastcsq = DL.map (DL.last) csqsplitequals
+                --Split each subfield of the sublists of splitequals by comma delimiter.
+                let splitcomma = DL.map (DL.map (DL.map (DLS.splitOn ","))) lastcsq
+                --Grab the last field of splitcomma.
+                let lastsplitcomma = DL.map (DL.map (DL.last)) splitcomma
+                --Split each item in lastsplitcomma by | delimiter.
+                let splitlastsplitcomma = DL.map (DL.map (DL.map (DLS.splitOn "|"))) lastsplitcomma
+                --Grab just the headers for the fields of onlyinfo.
+                let headersonlyinfo = DL.nub (DL.map (DL.head) (DL.concat (DL.concat splitequals)))
+                --Grab just the CSQ header from onlyinfo.
+                let csqheadersonlyinfo = DL.concat (DL.concat (DL.filter (DL.any (\x -> DL.isInfixOf "##INFO=<ID=CSQ" x)) onlyinfo))
+                --Grab the subfields from csqheadersonlyinfo.
+                let subfieldscsqheadersonlyinfo = DLS.splitOn "|" (DL.filter (\x -> x /= '"' && x /= '>') (DL.last (DLS.splitOn ":" csqheadersonlyinfo)))
+                --Remove "CSQ" from headersonlyinfo.
+                let finalheadersonlyinfo =  DLS.splitWhen (\x -> x == "CSQ") headersonlyinfo
+                --Insert subfieldscsqheadersonlyinfo into finalheadersonlyinfo.
+                let finalheaders = DL.concat (insertSubfields finalheadersonlyinfo subfieldscsqheadersonlyinfo)
+                --Grab data header from dataonly.
+                let dataheader = DL.concat (DL.filter (\x -> DL.head x == "#CHROM") dataonly)
+                --Remove "INFO" from dataheader.
+                let finaldataheader = DLS.splitWhen (\x -> x == "INFO") dataheader
+                --Insert finalheaders into finaldataheader.
+                let truefinalheader = DL.concat (insertSubfields finaldataheader finalheaders)
+                --Remove CSQ from truefinalheader.
+                let actualtruefinalheader = DLS.splitWhen (\x -> x == "CSQ") truefinalheader
+                --Replicate headinfodataonly the correct number of times.
+                let headreplicateddata = dataReplicator headinfodataonly (DL.concat (DL.map (DL.map (DL.length)) splitlastsplitcomma))
+                --Replicate tailinfodataonly the correct number of times.
+                let tailreplicateddata = dataReplicator tailinfodataonly (DL.concat (DL.map (DL.map (DL.length)) splitlastsplitcomma))
+                --Create formatfinalheaders.
+                let formatfinalheaders = ((DL.map (\x -> "FORMAT.NORMAL." ++ x) 
+                                          (DL.nub (DL.sort (DL.concat (DL.map (DLS.splitOn ":") 
+                                          (DL.nub (DL.sort (DL.map (DL.head) tailinfodataonly)))))))) ++
+                                          (DL.map (\x -> "FORMAT.TUMOR." ++ x) 
+                                          (DL.nub (DL.sort (DL.concat (DL.map (DLS.splitOn ":") 
+                                          (DL.nub (DL.sort (DL.map (DL.head) tailinfodataonly)))))))))
+                --Create formatdata.
+                let formatdata = DL.map (\[x,y,z] -> 
+                                        (DL.zip (DL.map (\x -> "FORMAT.NORMAL." ++ x) (DLS.splitOn ":" x)) (DLS.splitOn ":" y)) 
+                                     ++ (DL.zip (DL.map (\x -> "FORMAT.TUMOR." ++ x) (DLS.splitOn ":" x)) (DLS.splitOn ":" z))) tailinfodataonly
+                --Create finalformatdata.
+                let finalformatdata = formatNAAdder formatdata formatfinalheaders
+                --Create truefinalformatdata.
+                let truefinalformatdata = dataReplicator finalformatdata (DL.concat (DL.map (DL.map (DL.length)) splitlastsplitcomma))
+                --Create finalfinaldataheader.
+                let finalfinaldataheader = [DL.head (DLS.splitWhen (\x -> x == "INFO") dataheader)] ++ [formatfinalheaders]
+                --Create truefinafinalheader.
+                let truefinalfinalheader = DL.concat (insertSubfields finalfinaldataheader finalheaders)
+                --Create actualtruefinalfinalheader.
+                let actualtruefinalfinalheader = DLS.splitWhen (\x -> x == "CSQ") truefinalfinalheader
+                ----Concatenate splitlastsplitcomma.
+                let concatsplitlastsplitcomma = (DL.concat (DL.concat splitlastsplitcomma))
+                let annotatedcsqheader = csqFieldsAdder splitlastsplitcomma subfieldscsqheadersonlyinfo
+                let annotatedcsqheaderfinal = headerFieldsAdder concatsplitlastsplitcomma subfieldscsqheadersonlyinfo
+                let concatannotatedcsqheader = DL.concat (DL.concat (annotatedcsqheader))
+                let annotatedheadfields = headerFieldsAdder headreplicateddata (DL.head finaldataheader)
+                let annotatedtailfields = headerFieldsAdder tailreplicateddata (DL.last finaldataheader)
+                let annotatednotcsqfields = notCsqFieldsAdder notcsqsplitequals
+                let annotatednotcsqfieldsaddedback = notCsqFieldsAddedBack annotatednotcsqfields (DL.concat finalheadersonlyinfo)
+                let replicatedannotatednotcsqfinal = dataReplicator
+                                                     (DL.map (DL.concat) annotatednotcsqfieldsaddedback)
+                                                     (DL.concat (DL.map (DL.map (DL.length)) splitlastsplitcomma))
+                let finalizedinfofield = combineInfoFields replicatedannotatednotcsqfinal annotatedcsqheaderfinal
+                let finalinfofield = DL.map (DL.concat) finalizedinfofield
+                let finalizeddata = dataCombinator annotatedheadfields finalinfofield truefinalformatdata
+                let sortedfinalizeddata = DL.map (DL.sortBy (\(a,_) (b,_) -> compare a b)) finalizeddata
+                let tailfinalizeddata = DL.map (DL.map (\(a,b) -> b)) sortedfinalizeddata
+                let sortedactualtruefinalfinalheader = DL.map (DL.sort) actualtruefinalfinalheader
+                let finalfinaldata = [mapNotLast (++ "\n") allmetadata] ++ (DL.map (mapNotLast (++ "\t")) sortedactualtruefinalfinalheader)
+                                                  ++ (DL.map (mapNotLast (++ "\t")) (notApplicableAdder tailfinalizeddata))
+                --Print the file to stdout (cat) or to a file.
+                if DL.length (DL.filter (isOutputFile) options) > 0
+                    --Check to see if outfile is to be gzipped.
+                    then if DL.elem GzipOut options
+                        then do
+                            _ <- gzipPrintFile options finalfinaldata
+                            return ()
+                        else noGzipPrintFile options finalfinaldata
+                else catFile finalfinaldata
+
+--processArgsAndContentsMgivcfMgitvcf -> This function will
+--walk through each of the command-line
+--arguments and files provided by the user.
+processArgsAndContentsMgivcfMgitvcf :: ([Flag],String) -> IO ()
+processArgsAndContentsMgivcfMgitvcf ([],[]) = return ()
+processArgsAndContentsMgivcfMgitvcf (options,content) = do
+    --Apply lineFeed function to content.
+    let processedfile = lineFeed content
+    --Apply lines to inputfile.
+    let processedfilenew = DL.lines content
+    --Grab only the data portion of processedfile.
+    let onlyinfo = onlyInfoGrabber processedfile
+    --Grab only the data lines in processedfile.
+    let dataonly = onlyDataVcfGrabber processedfile
+    --Grab all metadata lines from processedfile.
+    let allmetadata = onlyMetadataGrabber processedfilenew
+    --Grab only the INFO field of dataonly.
+    let infodataonly = DL.map (\x -> [x DL.!! 7]) (DL.tail dataonly)
+    --Grab all head fields except for the INFO field of dataonly.
+    let headinfodataonly = DL.map (DL.take 7) (DL.tail dataonly)
+    --Grab all tail fields except for the INFO field of dataonly.
+    let tailinfodataonly = DL.map (DL.drop 8) (DL.tail dataonly)
+    --Split the subfields of gdataonly by semicolon delimiter.
+    let splitsemicolon = DL.map (DL.map (DLS.splitOn ";")) infodataonly
+    --Grab only data with equals from splitsemicolon.
+    let onlyequalssplitsemicolon = infixFilter splitsemicolon
+    --Turn onlyequalssplitsemicolon from lists into tuples.
+    let splitonlyequals = DL.map (DL.map (DL.map (\x -> DLS.splitOneOf "=" x))) onlyequalssplitsemicolon
+    --Split each subfield of the subfields of splitsemicolon by equal-sign delimiter.
+    let splitequals = DL.map (DL.map (DL.map (DLS.splitOn "="))) splitsemicolon
+    --Grab only the list with "CSQ" as the first (head) element.
+    let csqsplitequals = DL.map (DL.map (DL.filter (\x -> DL.head x == "CSQ"))) splitequals
+    --Grab all elements except for the for the list with "CSQ" as the first (head) element.
+    let notcsqsplitequals = DL.concat (DL.map (DL.map (DL.filter (\x -> DL.head x /= "CSQ"))) splitequals)
+    --Grab the index of the list with "CSQ" as the first (head) element.
+    let csqsplitequalsindex = DL.map (DL.map (DM.fromJust)) 
+                                     (DL.map (DL.map (DL.elemIndex "CSQ")) 
+                                     (DL.map (DL.map (DL.map (DL.head))) splitequals))
+    --Grab only the last element of csqsplitequals.
+    let lastcsq = DL.map (DL.last) csqsplitequals
+    --Split each subfield of the sublists of splitequals by comma delimiter.
+    let splitcomma = DL.map (DL.map (DL.map (DLS.splitOn ","))) lastcsq
+    --Grab the last field of splitcomma.
+    let lastsplitcomma = DL.map (DL.map (DL.last)) splitcomma
+    --Split each item in lastsplitcomma by | delimiter.
+    let splitlastsplitcomma = DL.map (DL.map (DL.map (DLS.splitOn "|"))) lastsplitcomma
+    --Grab just the headers for the fields of onlyinfo.
+    let headersonlyinfo = DL.nub (DL.map (DL.head) (DL.concat (DL.concat splitequals)))
+    --Grab just the CSQ header from onlyinfo.
+    let csqheadersonlyinfo = DL.concat (DL.concat (DL.filter (DL.any (\x -> DL.isInfixOf "##INFO=<ID=CSQ" x)) onlyinfo))
+    --Grab the subfields from csqheadersonlyinfo.
+    let subfieldscsqheadersonlyinfo = DLS.splitOn "|" (DL.filter (\x -> x /= '"' && x /= '>') (DL.last (DLS.splitOn ":" csqheadersonlyinfo)))
+    --Remove "CSQ" from headersonlyinfo.
+    let finalheadersonlyinfo =  DLS.splitWhen (\x -> x == "CSQ") headersonlyinfo
+    --Insert subfieldscsqheadersonlyinfo into finalheadersonlyinfo.
+    let finalheaders = DL.concat (insertSubfields finalheadersonlyinfo subfieldscsqheadersonlyinfo)
+    --Grab data header from dataonly.
+    let dataheader = DL.concat (DL.filter (\x -> DL.head x == "#CHROM") dataonly)
+    --Remove "INFO" from dataheader.
+    let finaldataheader = DLS.splitWhen (\x -> x == "INFO") dataheader
+    --Insert finalheaders into finaldataheader.
+    let truefinalheader = DL.concat (insertSubfields finaldataheader finalheaders)
+    --Remove CSQ from truefinalheader.
+    let actualtruefinalheader = DLS.splitWhen (\x -> x == "CSQ") truefinalheader
+    --Relicate headinfodataonly the correct number of times.
+    let headreplicateddata = dataReplicator headinfodataonly (DL.concat (DL.map (DL.map (DL.length)) splitlastsplitcomma))
+    --Replicate tailinfodataonly the correct number of times.
+    let tailreplicateddata = dataReplicator tailinfodataonly (DL.concat (DL.map (DL.map (DL.length)) splitlastsplitcomma)) 
+    --Create formatfinalheaders.
+    let formatfinalheaders = ((DL.map (\x -> "FORMAT.NORMAL." ++ x) 
+                              (DL.nub (DL.sort (DL.concat (DL.map (DLS.splitOn ":") 
+                              (DL.nub (DL.sort (DL.map (DL.head) tailinfodataonly)))))))) ++ 
+                              (DL.map (\x -> "FORMAT.TUMOR." ++ x) 
+                              (DL.nub (DL.sort (DL.concat (DL.map (DLS.splitOn ":") 
+                              (DL.nub (DL.sort (DL.map (DL.head) tailinfodataonly)))))))))
+    --Create formatdata.
+    let formatdata = DL.map (\[x,y,z] -> 
+                            (DL.zip (DL.map (\x -> "FORMAT.NORMAL." ++ x) (DLS.splitOn ":" x)) (DLS.splitOn ":" y)) 
+                         ++ (DL.zip (DL.map (\x -> "FORMAT.TUMOR." ++ x) (DLS.splitOn ":" x)) (DLS.splitOn ":" z))) tailinfodataonly
+    --Create finalformatdata.
+    let finalformatdata = formatNAAdder formatdata formatfinalheaders
+    --Create truefinalformatdata.
+    let truefinalformatdata = dataReplicator finalformatdata (DL.concat (DL.map (DL.map (DL.length)) splitlastsplitcomma))
+    --Create finalfinaldataheader.
+    let finalfinaldataheader = [DL.head (DLS.splitWhen (\x -> x == "INFO") dataheader)] ++ [formatfinalheaders]
+    --Create truefinafinalheader.
+    let truefinalfinalheader = DL.concat (insertSubfields finalfinaldataheader finalheaders)
+    --Create actualtruefinalfinalheader.
+    let actualtruefinalfinalheader = DLS.splitWhen (\x -> x == "CSQ") truefinalfinalheader
+    ----Concatenate splitlastsplitcomma.
+    let concatsplitlastsplitcomma = (DL.concat (DL.concat splitlastsplitcomma))
+    let annotatedcsqheader = csqFieldsAdder splitlastsplitcomma subfieldscsqheadersonlyinfo
+    let annotatedcsqheaderfinal = headerFieldsAdder concatsplitlastsplitcomma subfieldscsqheadersonlyinfo
+    let concatannotatedcsqheader = DL.concat (DL.concat (annotatedcsqheader))
+    let annotatedheadfields = headerFieldsAdder headreplicateddata (DL.head finaldataheader)
+    let annotatedtailfields = headerFieldsAdder tailreplicateddata (DL.last finaldataheader)
+    let annotatednotcsqfields = notCsqFieldsAdder notcsqsplitequals
+    let annotatednotcsqfieldsaddedback = notCsqFieldsAddedBack annotatednotcsqfields (DL.concat finalheadersonlyinfo)
+    let replicatedannotatednotcsqfinal = dataReplicator 
+                                         (DL.map (DL.concat) annotatednotcsqfieldsaddedback) 
+                                         (DL.concat (DL.map (DL.map (DL.length)) splitlastsplitcomma))
+    let finalizedinfofield = combineInfoFields replicatedannotatednotcsqfinal annotatedcsqheaderfinal
+    let finalinfofield = DL.map (DL.concat) finalizedinfofield 
+    let finalizeddata = dataCombinator annotatedheadfields finalinfofield truefinalformatdata
+    let sortedfinalizeddata = DL.map (DL.sortBy (\(a,_) (b,_) -> compare a b)) finalizeddata
+    let tailfinalizeddata = DL.map (DL.map (\(a,b) -> b)) sortedfinalizeddata
+    let sortedactualtruefinalfinalheader = DL.map (DL.sort) actualtruefinalfinalheader
+    let finalfinaldata = [mapNotLast (++ "\n") allmetadata] ++ (DL.map (mapNotLast (++ "\t")) sortedactualtruefinalfinalheader)
+                                      ++ (DL.map (mapNotLast (++ "\t")) (notApplicableAdder tailfinalizeddata))
+    --Print the file to stdout (cat) or to a file.
+    if DL.length (DL.filter (isOutputFile) options) > 0
+        --Check to see if outfile is to be gzipped.
+        then if DL.elem GzipOut options
+            then do
+                _ <- gzipPrintFile options finalfinaldata
+                return ()
+            else noGzipPrintFile options finalfinaldata
+    else catFile finalfinaldata   
+
+--processArgsAndFilesMgitvcfMgivcf -> This function will
+--walk through each of the command-line
+--arguments and files provided by the user.
+processArgsAndFilesMgitvcfMgivcf :: ([Flag],String) -> IO ()
+processArgsAndFilesMgitvcfMgivcf ([],[]) = return ()
+processArgsAndFilesMgitvcfMgivcf (options,content) = do
+    --Apply lineFeed function to inputfile.
+    let processedfile = lineFeed content
+    --Grab only the data portion of processedfile.
+    print "mgitvcfmgivcfcontents"
+
+--processArgsAndContentsMgivcfMgitvcf -> This function will
+--walk through each of the command-line
+--arguments and files provided by the user.
+processArgsAndContentsMgitvcfMgivcf :: ([Flag],String) -> IO ()
+processArgsAndContentsMgitvcfMgivcf ([],[]) = return ()
+processArgsAndContentsMgitvcfMgivcf (options,content) = do
+    --Apply lineFeed function to inputfile.
+    let processedfile = lineFeed content
+    --Grab only the data portion of processedfile.
+    print "mgitvcfmgivcfcontents"
+
+
 {-------------------------}
 
 {-Main function.-}
@@ -1141,33 +1568,32 @@ main = do
 --Get command line arguments.
     (args,files) <- SE.getArgs >>= compilerOpts
     --See if files is null.
-    if null files
-        then do --Get stdin.
-                contents <- SIO.getContents
-                --Vep or vcf parsing pipeline?
-                if (fst (vepOrVcfPipeline args) == "vep" && snd (vepOrVcfPipeline args) == "tvep") 
-                    then do --Run args and contents through processArgsAndContentsVepTvep.
-                            processArgsAndContentsVepTvep (args,contents)
-                    else if (fst (vepOrVcfPipeline args) == "tvep" && snd (vepOrVcfPipeline args) == "vep")
-                        then do --Run args and contents through processArgsAndContentsTvepVep.
-                                processArgsAndContentsTvepVep (args,contents)
-                        else if (fst (vepOrVcfPipeline args) == "vcf" && snd (vepOrVcfPipeline args) == "tvcf")
-                            then do --Run args and contents through processArgsAndContentsVcfTvcf.
-                                    processArgsAndContentsVcfTvcf (args,contents)
-                            else do --Run args and contents through processArgsAndContentsTvcfVcf.
-                                    processArgsAndContentsTvcfVcf (args,contents) 
-
-        else do --Vep or vcf parsing pipeline?
-                if (fst (vepOrVcfPipeline args) == "vep" && snd (vepOrVcfPipeline args) == "tvep")
-                    then do --Run args and contents through processArgsAndFilesVepTvep.
-                            processArgsAndFilesVepTvep (args,files)
-                    else if (fst (vepOrVcfPipeline args) == "tvep" && snd (vepOrVcfPipeline args) == "vep")
-                        then do --Run args and contents through processArgsAndFilesTvepVep.
-                                processArgsAndFilesTvepVep (args,files)
-                        else if (fst (vepOrVcfPipeline args) == "vcf" && snd (vepOrVcfPipeline args) == "tvcf")
-                            then do --Run args and contents through processArgsAndFilesVcfTvcf.
-                                    processArgsAndFilesVcfTvcf (args,files)
-                            else do --Run args and contents through processArgsAndFilesTvcfVcf.
-                                    processArgsAndFilesTvcfVcf (args,files)
+    if | null files ->
+       do --Get stdin.
+          contents <- SIO.getContents
+          --Vep or vcf parsing pipeline?
+          if | fst (vepOrVcfPipeline args) == "vep" && snd (vepOrVcfPipeline args) == "tvep" ->
+             do processArgsAndContentsVepTvep (args,contents)
+             | fst (vepOrVcfPipeline args) == "tvep" && snd (vepOrVcfPipeline args) == "vep" ->
+             do processArgsAndContentsTvepVep (args,contents)
+             | fst (vepOrVcfPipeline args) == "vcf" && snd (vepOrVcfPipeline args) == "tvcf" ->
+             do processArgsAndContentsVcfTvcf (args,contents)
+             | fst (vepOrVcfPipeline args) == "mgivcf" && snd (vepOrVcfPipeline args) == "mgitvcf" ->
+             do processArgsAndContentsMgivcfMgitvcf (args,contents)
+             | fst (vepOrVcfPipeline args) == "mgitvcf" && snd (vepOrVcfPipeline args) == "mgivcf" ->
+             do processArgsAndContentsMgitvcfMgivcf (args,contents)
+             | otherwise -> do processArgsAndContentsTvcfVcf (args,contents) 
+       | otherwise -> do --Vep or vcf parsing pipeline?
+          if | fst (vepOrVcfPipeline args) == "vep" && snd (vepOrVcfPipeline args) == "tvep" ->
+             do processArgsAndFilesVepTvep (args,files)
+             | fst (vepOrVcfPipeline args) == "tvep" && snd (vepOrVcfPipeline args) == "vep" ->
+             do processArgsAndFilesTvepVep (args,files)
+             | fst (vepOrVcfPipeline args) == "vcf" && snd (vepOrVcfPipeline args) == "tvcf" ->
+             do processArgsAndFilesVcfTvcf (args,files)
+             | fst (vepOrVcfPipeline args) == "mgivcf" && snd (vepOrVcfPipeline args) == "mgitvcf" ->
+             do processArgsAndFilesMgivcfMgitvcf (args,files)
+             | fst (vepOrVcfPipeline args) == "mgitvcf" && snd (vepOrVcfPipeline args) == "mgivcf" ->
+             do processArgsAndFilesMgitvcfMgivcf (args,files)
+             | otherwise -> do processArgsAndFilesTvcfVcf (args,files)
 
 {----------------}
